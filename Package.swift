@@ -1,0 +1,48 @@
+// swift-tools-version: 6.2
+
+import PackageDescription
+
+// ISO/IEC 14496-22: Open Font Format (OFF)
+// Specifies the structure of TrueType and OpenType font files
+let package = Package(
+    name: "swift-iso-14496-22",
+    platforms: [
+        .macOS(.v26),
+        .iOS(.v26),
+        .tvOS(.v26),
+        .watchOS(.v26),
+        .visionOS(.v26),
+    ],
+    products: [
+        .library(name: "ISO 14496-22", targets: ["ISO 14496-22"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/swift-standards/swift-standards", from: "0.20.0"),
+    ],
+    targets: [
+        .target(
+            name: "ISO 14496-22",
+            dependencies: [
+                .product(name: "Standards", package: "swift-standards"),
+                .product(name: "Binary", package: "swift-standards"),
+            ]
+        ),
+        .testTarget(
+            name: "ISO 14496-22".tests,
+            dependencies: ["ISO 14496-22"]
+        ),
+    ],
+    swiftLanguageModes: [.v6]
+)
+
+extension String {
+    var tests: Self { self + " Tests" }
+}
+
+for target in package.targets where ![.system, .binary, .plugin].contains(target.type) {
+    target.swiftSettings = (target.swiftSettings ?? []) + [
+        .enableUpcomingFeature("ExistentialAny"),
+        .enableUpcomingFeature("InternalImportsByDefault"),
+        .enableUpcomingFeature("MemberImportVisibility"),
+    ]
+}
