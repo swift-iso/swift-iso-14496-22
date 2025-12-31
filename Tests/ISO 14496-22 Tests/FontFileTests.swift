@@ -3,6 +3,9 @@
 
 import Testing
 @testable import ISO_14496_22
+#if os(macOS)
+import Foundation  // For file reading in tests only
+#endif
 
 @Suite("FontFile Parsing Tests")
 struct FontFileParsingTests {
@@ -118,6 +121,55 @@ struct CmapTableTests {
         #expect(table.glyphIndex(for: 68) == nil)  // 'D' not mapped
     }
 }
+
+#if os(macOS)
+@Suite("System Font Tests")
+struct SystemFontTests {
+
+    @Test("Parses Geneva.ttf from system fonts")
+    func parsesGeneva() throws {
+        let path = "/System/Library/Fonts/Geneva.ttf"
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        let fontData = [UInt8](data)
+
+        let fontFile = try ISO_14496_22.FontFile(data: fontData)
+
+        // Verify basic properties
+        #expect(fontFile.head.unitsPerEm > 0)
+        #expect(fontFile.head.magicNumber == 0x5F0F3CF5)
+        #expect(fontFile.maxp.numGlyphs > 0)
+
+        // Verify name table has PostScript name
+        #expect(!fontFile.postScriptName.isEmpty)
+        print("Font: \(fontFile.postScriptName)")
+        print("Units per em: \(fontFile.head.unitsPerEm)")
+        print("Num glyphs: \(fontFile.maxp.numGlyphs)")
+
+        // Verify cmap has mappings
+        #expect(!fontFile.cmap.unicodeMapping.isEmpty)
+
+        // Check glyph for 'A' (Unicode 65)
+        if let glyphA = fontFile.cmap.glyphIndex(for: 65) {
+            let widthA = fontFile.hmtx.advanceWidth(for: glyphA)
+            print("Glyph A (index \(glyphA)): width \(widthA)")
+            #expect(widthA > 0)
+        }
+    }
+
+    @Test("Parses Symbol.ttf from system fonts")
+    func parsesSymbol() throws {
+        let path = "/System/Library/Fonts/Symbol.ttf"
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        let fontData = [UInt8](data)
+
+        let fontFile = try ISO_14496_22.FontFile(data: fontData)
+
+        #expect(fontFile.head.unitsPerEm > 0)
+        #expect(!fontFile.postScriptName.isEmpty)
+        print("Font: \(fontFile.postScriptName)")
+    }
+}
+#endif
 
 @Suite("Fixed Point Tests")
 struct FixedPointTests {
