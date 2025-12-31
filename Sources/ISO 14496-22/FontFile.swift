@@ -12,6 +12,10 @@ extension ISO_14496_22 {
     /// - `cmap`: Character to glyph mapping
     /// - `name`: Font naming (PostScript name, family, etc.)
     /// - `post`: PostScript info (italic angle, fixed pitch)
+    ///
+    /// Optional tables for font subsetting:
+    /// - `loca`: Glyph location offsets
+    /// - `glyf`: Glyph outline data
     public struct FontFile: Sendable, Equatable {
         /// The raw font file data (for embedding)
         public let data: [UInt8]
@@ -37,6 +41,12 @@ extension ISO_14496_22 {
         /// PostScript table
         public let post: PostTable
 
+        /// Index to location table (optional, for subsetting)
+        public let loca: LocaTable?
+
+        /// Glyph data table (optional, for subsetting)
+        public let glyf: GlyfTable?
+
         /// Initialize with parsed tables
         public init(
             data: [UInt8],
@@ -46,7 +56,9 @@ extension ISO_14496_22 {
             maxp: MaxpTable,
             cmap: CmapTable,
             name: NameTable,
-            post: PostTable
+            post: PostTable,
+            loca: LocaTable? = nil,
+            glyf: GlyfTable? = nil
         ) {
             self.data = data
             self.head = head
@@ -56,6 +68,8 @@ extension ISO_14496_22 {
             self.cmap = cmap
             self.name = name
             self.post = post
+            self.loca = loca
+            self.glyf = glyf
         }
     }
 }

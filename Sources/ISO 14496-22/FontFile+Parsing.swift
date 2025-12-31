@@ -55,6 +55,10 @@ extension ISO_14496_22.FontFile {
         self.cmap = try Self.parseCmap(data: data, tableOffsets: tableOffsets)
         self.name = try Self.parseName(data: data, tableOffsets: tableOffsets)
         self.post = try Self.parsePost(data: data, tableOffsets: tableOffsets)
+
+        // Parse optional tables for subsetting (TrueType only, not CFF)
+        self.loca = Self.parseLoca(data: data, tableOffsets: tableOffsets, indexToLocFormat: head.indexToLocFormat, numGlyphs: maxp.numGlyphs)
+        self.glyf = Self.parseGlyf(data: data, tableOffsets: tableOffsets)
     }
 
     /// Parsing errors
@@ -479,6 +483,59 @@ extension ISO_14496_22.FontFile {
             minMemType1: readUInt32(data, at: o + 24),
             maxMemType1: readUInt32(data, at: o + 28),
             glyphNames: nil  // TODO: Parse version 2.0 glyph names if needed
+        )
+    }
+
+    /// Parse loca table (optional, TrueType only)
+    ///
+    /// - Parameters:
+    ///   - indexToLocFormat: 0 for short (2-byte), 1 for long (4-byte)
+    ///   - numGlyphs: Number of glyphs from maxp table
+    static func parseLoca(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)], indexToLocFormat: Int16, numGlyphs: UInt16) -> ISO_14496_22.LocaTable? {
+        guard let table = tableOffsets["loca"] else {
+            return nil  // CFF fonts don't have loca
+        }
+        let o = Int(table.offset)
+        let numEntries = Int(numGlyphs) + 1  // loca has numGlyphs + 1 entries
+
+        var offsets: [UInt32] = []
+        offsets.reserveCapacity(numEntries)
+
+        if indexToLocFormat == 0 {
+            // Short format: 2-byte offsets, multiply by 2
+            let expectedSize = numEntries * 2
+            guard o + expectedSize <= data.count else { return nil }
+
+            for i in 0..<numEntries {
+                let offset = readUInt16(data, at: o + i * 2)
+                offsets.append(UInt32(offset) * 2)  // Short offsets are halved
+            }
+        } else {
+            // Long format: 4-byte offsets
+            let expectedSize = numEntries * 4
+            guard o + expectedSize <= data.count else { return nil }
+
+            for i in 0..<numEntries {
+                offsets.append(readUInt32(data, at: o + i * 4))
+            }
+        }
+
+        return ISO_14496_22.LocaTable(offsets: offsets)
+    }
+
+    /// Parse glyf table (optional, TrueType only)
+    static func parseGlyf(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) -> ISO_14496_22.GlyfTable? {
+        guard let table = tableOffsets["glyf"] else {
+            return nil  // CFF fonts don't have glyf
+        }
+        let o = Int(table.offset)
+        let length = Int(table.length)
+
+        guard o + length <= data.count else { return nil }
+
+        return ISO_14496_22.GlyfTable(
+            data: Array(data[o..<(o + length)]),
+            tableOffset: table.offset
         )
     }
 }
