@@ -17,14 +17,15 @@ let package = Package(
         .library(name: "ISO 14496-22", targets: ["ISO 14496-22"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-standards/swift-standards", from: "0.20.0"),
+        .package(path: "../../swift-primitives/swift-standard-library-extensions"),
+        .package(path: "../../swift-primitives/swift-binary-primitives"),
     ],
     targets: [
         .target(
             name: "ISO 14496-22",
             dependencies: [
-                .product(name: "Standards", package: "swift-standards"),
-                .product(name: "Binary", package: "swift-standards"),
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
+                .product(name: "Binary Primitives", package: "swift-binary-primitives"),
             ]
         ),
         .testTarget(
