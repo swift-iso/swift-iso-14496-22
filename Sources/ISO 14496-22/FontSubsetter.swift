@@ -257,7 +257,7 @@ extension ISO_14496_22.FontSubsetter {
         var output = [UInt8]()
 
         // Offset table (12 bytes)
-        appendUInt32(&output, 0x00010000)  // sfnt version (TrueType)
+        appendUInt32(&output, 0x0001_0000)  // sfnt version (TrueType)
         appendUInt16(&output, numTables)
         appendUInt16(&output, searchRange)
         appendUInt16(&output, entrySelector)
@@ -374,7 +374,7 @@ extension ISO_14496_22.FontSubsetter {
 
         let maxp = fontFile.maxp
 
-        appendUInt32(&data, 0x00010000)  // version 1.0
+        appendUInt32(&data, 0x0001_0000)  // version 1.0
         appendUInt16(&data, numGlyphs)
         appendUInt16(&data, maxp.maxPoints ?? 0)
         appendUInt16(&data, maxp.maxContours ?? 0)
@@ -414,7 +414,8 @@ extension ISO_14496_22.FontSubsetter {
             for scalar in char.unicodeScalars {
                 let codePoint = scalar.value
                 if let oldGlyph = fontFile.cmap.glyphIndex(for: codePoint),
-                   let newGlyph = oldToNew[oldGlyph] {
+                    let newGlyph = oldToNew[oldGlyph]
+                {
                     charToGlyph.append((codePoint, newGlyph))
                 }
             }
@@ -432,7 +433,7 @@ extension ISO_14496_22.FontSubsetter {
         // Encoding record
         appendUInt16(&data, 3)  // platformID (Windows)
         appendUInt16(&data, 1)  // encodingID (Unicode BMP)
-        appendUInt32(&data, 12) // offset to subtable
+        appendUInt32(&data, 12)  // offset to subtable
 
         // Format 4 subtable
         let format4 = buildCmapFormat4(charToGlyph: charToGlyph)
@@ -555,7 +556,7 @@ extension ISO_14496_22.FontSubsetter {
         var data = [UInt8]()
 
         // Use format 3.0 (no glyph names - saves space)
-        appendUInt32(&data, 0x00030000)  // version 3.0
+        appendUInt32(&data, 0x0003_0000)  // version 3.0
 
         let post = fontFile.post
         let italicAngle = Int32(post.italicAngle * 65536)
@@ -580,7 +581,7 @@ extension ISO_14496_22.FontSubsetter {
 
         appendUInt16(&data, 0)  // format
         appendUInt16(&data, 1)  // count
-        appendUInt16(&data, 18) // stringOffset (6 + 12 = 18)
+        appendUInt16(&data, 18)  // stringOffset (6 + 12 = 18)
 
         // Name record for PostScript name
         appendUInt16(&data, 3)  // platformID (Windows)
@@ -635,7 +636,7 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     private func appendInt64(_ data: inout [UInt8], _ value: Int64) {
-        appendUInt32(&data, UInt32((value >> 32) & 0xFFFFFFFF))
-        appendUInt32(&data, UInt32(value & 0xFFFFFFFF))
+        appendUInt32(&data, UInt32((value >> 32) & 0xFFFF_FFFF))
+        appendUInt32(&data, UInt32(value & 0xFFFF_FFFF))
     }
 }

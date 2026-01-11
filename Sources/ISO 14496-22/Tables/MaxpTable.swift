@@ -58,17 +58,17 @@ extension ISO_14496_22 {
 
         /// Whether this is a TrueType font (vs CFF/OpenType)
         public var isTrueType: Bool {
-            version == 0x00010000
+            version == 0x0001_0000
         }
 
         /// Whether this is a CFF/OpenType font
         public var isCFF: Bool {
-            version == 0x00005000
+            version == 0x0000_5000
         }
 
         /// Initialize for CFF fonts (minimal version)
         public init(numGlyphs: UInt16) {
-            self.version = 0x00005000
+            self.version = 0x0000_5000
             self.numGlyphs = numGlyphs
             self.maxPoints = nil
             self.maxContours = nil
@@ -102,7 +102,7 @@ extension ISO_14496_22 {
             maxComponentElements: UInt16,
             maxComponentDepth: UInt16
         ) {
-            self.version = 0x00010000
+            self.version = 0x0001_0000
             self.numGlyphs = numGlyphs
             self.maxPoints = maxPoints
             self.maxContours = maxContours

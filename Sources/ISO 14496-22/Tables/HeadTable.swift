@@ -73,7 +73,7 @@ extension ISO_14496_22 {
             minorVersion: UInt16 = 0,
             fontRevision: Fixed = Fixed(integer: 1, fraction: 0),
             checksumAdjustment: UInt32 = 0,
-            magicNumber: UInt32 = 0x5F0F3CF5,
+            magicNumber: UInt32 = 0x5F0F_3CF5,
             flags: Flags = [],
             unitsPerEm: UInt16 = 1000,
             created: Int64 = 0,

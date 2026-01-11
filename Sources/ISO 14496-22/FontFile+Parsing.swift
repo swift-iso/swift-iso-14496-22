@@ -22,8 +22,7 @@ extension ISO_14496_22.FontFile {
         // 0x4F54544F = 'OTTO' (OpenType with CFF)
         // 0x74727565 = 'true' (TrueType on Mac)
         // 0x74797031 = 'typ1' (old-style PostScript on Mac)
-        guard sfntVersion == 0x00010000 || sfntVersion == 0x4F54544F ||
-              sfntVersion == 0x74727565 || sfntVersion == 0x74797031 else {
+        guard sfntVersion == 0x0001_0000 || sfntVersion == 0x4F54_544F || sfntVersion == 0x7472_7565 || sfntVersion == 0x7479_7031 else {
             throw ParsingError.invalidData("Invalid sfnt version: \(sfntVersion)")
         }
 
@@ -38,7 +37,7 @@ extension ISO_14496_22.FontFile {
                 throw ParsingError.invalidData("Table directory extends beyond file")
             }
 
-            let tagBytes = Array(data[offset..<offset+4])
+            let tagBytes = Array(data[offset..<offset + 4])
             let tag = String(decoding: tagBytes, as: UTF8.self)
             let tableOffset = readUInt32(data, at: offset + 8)
             let tableLength = readUInt32(data, at: offset + 12)
@@ -146,7 +145,7 @@ extension ISO_14496_22.FontFile {
         let version = readUInt32(data, at: o)
         let numGlyphs = readUInt16(data, at: o + 4)
 
-        if version == 0x00010000 && o + 32 <= data.count {
+        if version == 0x0001_0000 && o + 32 <= data.count {
             // TrueType version
             return ISO_14496_22.MaxpTable(
                 numGlyphs: numGlyphs,
@@ -193,10 +192,12 @@ extension ISO_14496_22.FontFile {
 
         for i in 0..<nHMetrics {
             let offset = o + i * 4
-            hMetrics.append(ISO_14496_22.LongHorMetric(
-                advanceWidth: readUInt16(data, at: offset),
-                leftSideBearing: readInt16(data, at: offset + 2)
-            ))
+            hMetrics.append(
+                ISO_14496_22.LongHorMetric(
+                    advanceWidth: readUInt16(data, at: offset),
+                    leftSideBearing: readInt16(data, at: offset + 2)
+                )
+            )
         }
 
         var leftSideBearings: [Int16] = []
@@ -551,10 +552,7 @@ private func readInt16(_ data: [UInt8], at offset: Int) -> Int16 {
 }
 
 private func readUInt32(_ data: [UInt8], at offset: Int) -> UInt32 {
-    UInt32(data[offset]) << 24 |
-    UInt32(data[offset + 1]) << 16 |
-    UInt32(data[offset + 2]) << 8 |
-    UInt32(data[offset + 3])
+    UInt32(data[offset]) << 24 | UInt32(data[offset + 1]) << 16 | UInt32(data[offset + 2]) << 8 | UInt32(data[offset + 3])
 }
 
 private func readInt32(_ data: [UInt8], at offset: Int) -> Int32 {
