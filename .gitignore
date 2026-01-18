@@ -1,4 +1,9 @@
+# ========== CANONICAL (auto-synced, do not edit) ==========
+# Source: swift-institute
+# Sync: Scripts/sync-gitignore.sh or manual
+
 *~
+.DS_Store
 
 Package.resolved
 DerivedData/
@@ -20,11 +25,8 @@ Thumbs.db
 !/Sources/
 !/Tests/
 !/.github/
-!/.swiftlint/
 !/Package.swift
 !/LICENSE.md
-!/.swift-format
-!/.swiftlint.yml
 
 # Documentation (opt-in for whitelisted .md files and .docc catalogs only)
 # Blocks all .md files by default to prevent AI-generated content from being committed
@@ -39,7 +41,14 @@ Thumbs.db
 
 *.pdf
 
+# SwiftLint
+**/.swiftlint/RemoteConfigCache
 
-# SwiftLint Remote Config Cache
-.swiftlint/RemoteConfigCache
+# Swift Package Manager
 .build/
+.swiftpm/
+
+# ========== END CANONICAL ==========
+
+# ========== LOCAL OVERRIDES ==========
+# Package-specific rules below (preserved during sync)
