@@ -30,7 +30,7 @@ extension ISO_14496_22 {
         /// - Parameter characters: The characters to include in the subset
         /// - Returns: Subset font data
         /// - Throws: `SubsetError` if subsetting fails
-        public func subset(characters: Set<Character>) throws -> [UInt8] {
+        public func subset(characters: Set<Character>) throws(SubsetError) -> [UInt8] {
             guard let loca = fontFile.loca, let glyf = fontFile.glyf else {
                 throw SubsetError.missingTables("Font missing loca/glyf tables (CFF fonts not supported)")
             }
@@ -84,7 +84,7 @@ extension ISO_14496_22 {
             }
 
             // Step 4: Build new glyf and loca tables
-            let (newGlyfData, newLocaOffsets) = try buildGlyfAndLoca(
+            let (newGlyfData, newLocaOffsets) = buildGlyfAndLoca(
                 sortedGlyphs: sortedGlyphs,
                 oldToNew: oldToNew,
                 loca: loca,
@@ -92,7 +92,7 @@ extension ISO_14496_22 {
             )
 
             // Step 5: Build the subset font file
-            return try buildSubsetFont(
+            return buildSubsetFont(
                 sortedGlyphs: sortedGlyphs,
                 oldToNew: oldToNew,
                 newGlyfData: newGlyfData,
@@ -119,7 +119,7 @@ extension ISO_14496_22.FontSubsetter {
         oldToNew: [UInt16: UInt16],
         loca: ISO_14496_22.LocaTable,
         glyf: ISO_14496_22.GlyfTable
-    ) throws -> (glyfData: [UInt8], locaOffsets: [UInt32]) {
+    ) -> (glyfData: [UInt8], locaOffsets: [UInt32]) {
         var newGlyfData = [UInt8]()
         var newLocaOffsets = [UInt32]()
 
@@ -206,7 +206,7 @@ extension ISO_14496_22.FontSubsetter {
         newGlyfData: [UInt8],
         newLocaOffsets: [UInt32],
         characters: Set<Character>
-    ) throws -> [UInt8] {
+    ) -> [UInt8] {
         let numGlyphs = UInt16(sortedGlyphs.count)
 
         // Determine loca format based on glyf size

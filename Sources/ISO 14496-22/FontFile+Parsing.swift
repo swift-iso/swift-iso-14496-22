@@ -7,7 +7,7 @@ extension ISO_14496_22.FontFile {
     /// - Parameter data: Raw font file bytes
     /// - Throws: `ParsingError` if the data is invalid
     /// - Returns: Parsed font file
-    public init(data: [UInt8]) throws {
+    public init(data: [UInt8]) throws(ParsingError) {
         self.data = data
 
         // Parse offset table
@@ -71,7 +71,7 @@ extension ISO_14496_22.FontFile {
 // MARK: - Table Parsing
 
 extension ISO_14496_22.FontFile {
-    static func parseHead(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws -> ISO_14496_22.HeadTable {
+    static func parseHead(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.HeadTable {
         guard let table = tableOffsets["head"] else {
             throw ParsingError.missingTable("head")
         }
@@ -102,7 +102,7 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parseHhea(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws -> ISO_14496_22.HheaTable {
+    static func parseHhea(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.HheaTable {
         guard let table = tableOffsets["hhea"] else {
             throw ParsingError.missingTable("hhea")
         }
@@ -133,7 +133,7 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parseMaxp(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws -> ISO_14496_22.MaxpTable {
+    static func parseMaxp(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.MaxpTable {
         guard let table = tableOffsets["maxp"] else {
             throw ParsingError.missingTable("maxp")
         }
@@ -169,7 +169,7 @@ extension ISO_14496_22.FontFile {
         }
     }
 
-    static func parseHmtx(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)], numberOfHMetrics: UInt16, numGlyphs: UInt16) throws -> ISO_14496_22.HmtxTable {
+    static func parseHmtx(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)], numberOfHMetrics: UInt16, numGlyphs: UInt16) throws(ParsingError) -> ISO_14496_22.HmtxTable {
         guard let table = tableOffsets["hmtx"] else {
             throw ParsingError.missingTable("hmtx")
         }
@@ -216,7 +216,7 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parseCmap(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws -> ISO_14496_22.CmapTable {
+    static func parseCmap(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.CmapTable {
         guard let table = tableOffsets["cmap"] else {
             throw ParsingError.missingTable("cmap")
         }
@@ -300,7 +300,7 @@ extension ISO_14496_22.FontFile {
     }
 
     /// Parse cmap format 4 (segment mapping to delta values)
-    private static func parseFormat4(data: [UInt8], offset: Int) throws -> [UInt32: UInt16] {
+    private static func parseFormat4(data: [UInt8], offset: Int) throws(ParsingError) -> [UInt32: UInt16] {
         guard offset + 14 <= data.count else {
             throw ParsingError.invalidData("cmap format 4 header too small")
         }
@@ -356,7 +356,7 @@ extension ISO_14496_22.FontFile {
     }
 
     /// Parse cmap format 12 (segmented coverage)
-    private static func parseFormat12(data: [UInt8], offset: Int) throws -> [UInt32: UInt16] {
+    private static func parseFormat12(data: [UInt8], offset: Int) throws(ParsingError) -> [UInt32: UInt16] {
         guard offset + 16 <= data.count else {
             throw ParsingError.invalidData("cmap format 12 header too small")
         }
@@ -387,7 +387,7 @@ extension ISO_14496_22.FontFile {
         return mapping
     }
 
-    static func parseName(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws -> ISO_14496_22.NameTable {
+    static func parseName(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.NameTable {
         guard let table = tableOffsets["name"] else {
             throw ParsingError.missingTable("name")
         }
@@ -461,7 +461,7 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parsePost(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws -> ISO_14496_22.PostTable {
+    static func parsePost(data: [UInt8], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.PostTable {
         guard let table = tableOffsets["post"] else {
             throw ParsingError.missingTable("post")
         }
