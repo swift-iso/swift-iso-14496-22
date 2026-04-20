@@ -12,23 +12,23 @@ import Testing
 @Suite("FontFile Parsing Tests")
 struct FontFileParsingTests {
 
-    @Test("Rejects empty data")
-    func rejectsEmptyData() {
+    @Test
+    func `Rejects empty data`() {
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
             _ = try ISO_14496_22.FontFile(data: [])
         }
     }
 
-    @Test("Rejects data too small for header")
-    func rejectsTooSmall() {
+    @Test
+    func `Rejects data too small for header`() {
         let smallData: [UInt8] = [0, 1, 0, 0]  // Only 4 bytes
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
             _ = try ISO_14496_22.FontFile(data: smallData)
         }
     }
 
-    @Test("Rejects invalid sfnt version")
-    func rejectsInvalidVersion() {
+    @Test
+    func `Rejects invalid sfnt version`() {
         // 12 bytes but invalid version
         let invalidData: [UInt8] = [0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0]
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
@@ -40,8 +40,8 @@ struct FontFileParsingTests {
 @Suite("HeadTable Tests")
 struct HeadTableTests {
 
-    @Test("Default initialization")
-    func defaultInit() {
+    @Test
+    func `Default initialization`() {
         let head = ISO_14496_22.HeadTable()
         #expect(head.majorVersion == 1)
         #expect(head.minorVersion == 0)
@@ -49,8 +49,8 @@ struct HeadTableTests {
         #expect(head.magicNumber == 0x5F0F_3CF5)
     }
 
-    @Test("Flags option set")
-    func flagsOptionSet() {
+    @Test
+    func `Flags option set`() {
         let flags: ISO_14496_22.HeadTable.Flags = [.baselineAtY0, .leftSidebearingAtX0]
         #expect(flags.contains(.baselineAtY0))
         #expect(flags.contains(.leftSidebearingAtX0))
@@ -61,8 +61,8 @@ struct HeadTableTests {
 @Suite("HmtxTable Tests")
 struct HmtxTableTests {
 
-    @Test("Advance width lookup")
-    func advanceWidthLookup() {
+    @Test
+    func `Advance width lookup`() {
         let metrics = [
             ISO_14496_22.LongHorMetric(advanceWidth: 500, leftSideBearing: 50),
             ISO_14496_22.LongHorMetric(advanceWidth: 600, leftSideBearing: 60),
@@ -82,8 +82,8 @@ struct HmtxTableTests {
         #expect(table.advanceWidth(for: 4) == 700)
     }
 
-    @Test("Left side bearing lookup")
-    func leftSideBearingLookup() {
+    @Test
+    func `Left side bearing lookup`() {
         let metrics = [
             ISO_14496_22.LongHorMetric(advanceWidth: 500, leftSideBearing: 50),
             ISO_14496_22.LongHorMetric(advanceWidth: 600, leftSideBearing: 60),
@@ -104,8 +104,8 @@ struct HmtxTableTests {
 @Suite("CmapTable Tests")
 struct CmapTableTests {
 
-    @Test("Glyph index lookup")
-    func glyphIndexLookup() {
+    @Test
+    func `Glyph index lookup`() {
         let mapping: [UInt32: UInt16] = [
             65: 1,  // 'A' -> glyph 1
             66: 2,  // 'B' -> glyph 2
@@ -128,8 +128,8 @@ struct CmapTableTests {
     @Suite("System Font Tests")
     struct SystemFontTests {
 
-        @Test("Parses Geneva.ttf from system fonts")
-        func parsesGeneva() throws {
+        @Test
+        func `Parses Geneva.ttf from system fonts`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let fontData = [UInt8](data)
@@ -158,8 +158,8 @@ struct CmapTableTests {
             }
         }
 
-        @Test("Parses Symbol.ttf from system fonts")
-        func parsesSymbol() throws {
+        @Test
+        func `Parses Symbol.ttf from system fonts`() throws {
             let path = "/System/Library/Fonts/Symbol.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let fontData = [UInt8](data)
@@ -171,8 +171,8 @@ struct CmapTableTests {
             print("Font: \(fontFile.postScriptName)")
         }
 
-        @Test("Parses loca and glyf tables from Geneva.ttf")
-        func parsesLocaAndGlyf() throws {
+        @Test
+        func `Parses loca and glyf tables from Geneva.ttf`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let fontData = [UInt8](data)
@@ -209,8 +209,8 @@ struct CmapTableTests {
             }
         }
 
-        @Test("Detects composite glyphs")
-        func detectsCompositeGlyphs() throws {
+        @Test
+        func `Detects composite glyphs`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let fontData = [UInt8](data)
@@ -252,8 +252,8 @@ struct CmapTableTests {
 struct FontSubsetterTests {
 
     #if os(macOS)
-        @Test("Subsets Geneva.ttf to ASCII only")
-        func subsetsToASCII() throws {
+        @Test
+        func `Subsets Geneva.ttf to ASCII only`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let fontData = [UInt8](data)
@@ -285,8 +285,8 @@ struct FontSubsetterTests {
             #expect(subsetFont.cmap.glyphIndex(for: 65) != nil)
         }
 
-        @Test("Subsets to minimal character set")
-        func subsetsToMinimal() throws {
+        @Test
+        func `Subsets to minimal character set`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let fontData = [UInt8](data)
@@ -322,21 +322,21 @@ struct FontSubsetterTests {
 @Suite("Fixed Point Tests")
 struct FixedPointTests {
 
-    @Test("Integer value")
-    func integerValue() {
+    @Test
+    func `Integer value`() {
         let fixed = ISO_14496_22.Fixed(integer: 12, fraction: 0)
         #expect(fixed.doubleValue == 12.0)
     }
 
-    @Test("Fractional value")
-    func fractionalValue() {
+    @Test
+    func `Fractional value`() {
         // 0x8000 = 32768 = 0.5 * 65536
         let fixed = ISO_14496_22.Fixed(integer: 0, fraction: 32768)
         #expect(fixed.doubleValue == 0.5)
     }
 
-    @Test("Raw value initialization")
-    func rawValueInit() {
+    @Test
+    func `Raw value initialization`() {
         // 0x00010000 = 1.0 in 16.16 fixed point
         let fixed = ISO_14496_22.Fixed(rawValue: 0x0001_0000)
         #expect(fixed.integer == 1)
