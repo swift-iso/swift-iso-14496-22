@@ -1,0 +1,11 @@
+# .github/metadata.yaml
+# Triaged by AI-assisted bulk pass (2026-04-29).
+description: "Swift implementation of ISO/IEC 14496-22: Open Font Format."
+topics:
+  - standards
+  - iso
+  - iso-iec
+  - iso-14496-22
+  - fonts
+  - typography
+homepage: "https://swift-institute.org"
