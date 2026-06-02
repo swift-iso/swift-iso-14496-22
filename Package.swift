@@ -17,8 +17,8 @@ let package = Package(
         .library(name: "ISO 14496-22", targets: ["ISO 14496-22"])
     ],
     dependencies: [
-        .package(path: "../../swift-primitives/swift-standard-library-extensions"),
-        .package(path: "../../swift-primitives/swift-binary-primitives")
+        .package(url: "https://github.com/swift-primitives/swift-standard-library-extensions.git", branch: "main"),
+        .package(url: "https://github.com/swift-primitives/swift-binary-primitives.git", branch: "main")
     ],
     targets: [
         .target(
