@@ -12,6 +12,7 @@
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
 internal import Binary_Primitives_Standard_Library_Integration
+internal import Binary_Endianness_Primitives
 
 extension ISO_14496_22 {
     /// Creates subset fonts containing only required glyphs.
