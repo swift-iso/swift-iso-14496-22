@@ -7,6 +7,9 @@
 // Per ISO/IEC 14496-22:2019, Section 5.3.4:
 // > The glyf table contains the data that defines the appearance of the glyphs.
 
+public import Byte_Primitives
+internal import Byte_Primitives_Standard_Library_Integration
+
 extension ISO_14496_22 {
     /// Glyph data table ('glyf')
     ///
@@ -14,12 +17,12 @@ extension ISO_14496_22 {
     /// Use with `LocaTable` to locate individual glyphs.
     public struct GlyfTable: Sendable, Equatable {
         /// Raw glyph data (the entire glyf table)
-        public let data: [UInt8]
+        public let data: [Byte]
 
         /// Offset of this table in the original font file
         public let tableOffset: UInt32
 
-        public init(data: [UInt8], tableOffset: UInt32) {
+        public init(data: [Byte], tableOffset: UInt32) {
             self.data = data
             self.tableOffset = tableOffset
         }
@@ -30,7 +33,7 @@ extension ISO_14496_22 {
         ///   - start: Start offset from loca table
         ///   - end: End offset from loca table
         /// - Returns: Raw glyph bytes, or nil if out of range
-        public func glyphData(start: UInt32, end: UInt32) -> [UInt8]? {
+        public func glyphData(start: UInt32, end: UInt32) -> [Byte]? {
             let startIndex = Int(start)
             let endIndex = Int(end)
             guard startIndex <= endIndex, endIndex <= data.count else { return nil }

@@ -1,6 +1,8 @@
 // FontFile.swift
 // Represents a parsed TrueType/OpenType font file
 
+public import Byte_Primitives
+
 extension ISO_14496_22 {
     /// A parsed TrueType/OpenType font file.
     ///
@@ -18,7 +20,7 @@ extension ISO_14496_22 {
     /// - `glyf`: Glyph outline data
     public struct FontFile: Sendable, Equatable {
         /// The raw font file data (for embedding)
-        public let data: [UInt8]
+        public let data: [Byte]
 
         /// Font header table
         public let head: HeadTable
@@ -49,7 +51,7 @@ extension ISO_14496_22 {
 
         /// Initialize with parsed tables
         public init(
-            data: [UInt8],
+            data: [Byte],
             head: HeadTable,
             hhea: HheaTable,
             hmtx: HmtxTable,

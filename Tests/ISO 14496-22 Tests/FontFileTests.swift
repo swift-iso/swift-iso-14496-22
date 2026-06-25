@@ -2,6 +2,7 @@
 // Tests for ISO 14496-22 font parsing
 
 import Testing
+import Byte_Primitives
 
 @testable import ISO_14496_22
 
@@ -15,13 +16,13 @@ struct FontFileParsingTests {
     @Test
     func `Rejects empty data`() {
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
-            _ = try ISO_14496_22.FontFile(data: [])
+            _ = try ISO_14496_22.FontFile(data: [Byte]())
         }
     }
 
     @Test
     func `Rejects data too small for header`() {
-        let smallData: [UInt8] = [0, 1, 0, 0]  // Only 4 bytes
+        let smallData: [Byte] = [0, 1, 0, 0]  // Only 4 bytes
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
             _ = try ISO_14496_22.FontFile(data: smallData)
         }
@@ -30,7 +31,7 @@ struct FontFileParsingTests {
     @Test
     func `Rejects invalid sfnt version`() {
         // 12 bytes but invalid version
-        let invalidData: [UInt8] = [0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0]
+        let invalidData: [Byte] = [0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0]
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
             _ = try ISO_14496_22.FontFile(data: invalidData)
         }
@@ -132,7 +133,7 @@ struct CmapTableTests {
         func `Parses Geneva.ttf from system fonts`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = [UInt8](data)
+            let fontData = data.map(Byte.init)
 
             let fontFile = try ISO_14496_22.FontFile(data: fontData)
 
@@ -162,7 +163,7 @@ struct CmapTableTests {
         func `Parses Symbol.ttf from system fonts`() throws {
             let path = "/System/Library/Fonts/Symbol.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = [UInt8](data)
+            let fontData = data.map(Byte.init)
 
             let fontFile = try ISO_14496_22.FontFile(data: fontData)
 
@@ -175,7 +176,7 @@ struct CmapTableTests {
         func `Parses loca and glyf tables from Geneva.ttf`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = [UInt8](data)
+            let fontData = data.map(Byte.init)
 
             let fontFile = try ISO_14496_22.FontFile(data: fontData)
 
@@ -213,7 +214,7 @@ struct CmapTableTests {
         func `Detects composite glyphs`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = [UInt8](data)
+            let fontData = data.map(Byte.init)
 
             let fontFile = try ISO_14496_22.FontFile(data: fontData)
             let loca = try #require(fontFile.loca)
@@ -256,7 +257,7 @@ struct FontSubsetterTests {
         func `Subsets Geneva.ttf to ASCII only`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = [UInt8](data)
+            let fontData = data.map(Byte.init)
 
             let fontFile = try ISO_14496_22.FontFile(data: fontData)
             let originalSize = fontData.count
@@ -289,7 +290,7 @@ struct FontSubsetterTests {
         func `Subsets to minimal character set`() throws {
             let path = "/System/Library/Fonts/Geneva.ttf"
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = [UInt8](data)
+            let fontData = data.map(Byte.init)
 
             let fontFile = try ISO_14496_22.FontFile(data: fontData)
 

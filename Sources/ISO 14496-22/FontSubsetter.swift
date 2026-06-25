@@ -9,6 +9,9 @@
 // > A font subset shall be a valid font that includes a subset
 // > of the glyphs in the original font.
 
+public import Byte_Primitives
+internal import Byte_Primitives_Standard_Library_Integration
+
 extension ISO_14496_22 {
     /// Creates subset fonts containing only required glyphs.
     ///
@@ -30,7 +33,7 @@ extension ISO_14496_22 {
         /// - Parameter characters: The characters to include in the subset
         /// - Returns: Subset font data
         /// - Throws: `SubsetError` if subsetting fails
-        public func subset(characters: Set<Character>) throws(SubsetError) -> [UInt8] {
+        public func subset(characters: Set<Character>) throws(SubsetError) -> [Byte] {
             guard let loca = fontFile.loca, let glyf = fontFile.glyf else {
                 throw SubsetError.missingTables("Font missing loca/glyf tables (CFF fonts not supported)")
             }
@@ -119,8 +122,8 @@ extension ISO_14496_22.FontSubsetter {
         oldToNew: [UInt16: UInt16],
         loca: ISO_14496_22.LocaTable,
         glyf: ISO_14496_22.GlyfTable
-    ) -> (glyfData: [UInt8], locaOffsets: [UInt32]) {
-        var newGlyfData = [UInt8]()
+    ) -> (glyfData: [Byte], locaOffsets: [UInt32]) {
+        var newGlyfData = [Byte]()
         var newLocaOffsets = [UInt32]()
 
         for oldGlyphID in sortedGlyphs {
@@ -155,7 +158,7 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     /// Remap glyph IDs in a composite glyph's data
-    private func remapCompositeGlyph(_ data: inout [UInt8], oldToNew: [UInt16: UInt16]) {
+    private func remapCompositeGlyph(_ data: inout [Byte], oldToNew: [UInt16: UInt16]) {
         // Skip header: numberOfContours (2) + xMin (2) + yMin (2) + xMax (2) + yMax (2) = 10 bytes
         var offset = 10
 
@@ -173,8 +176,8 @@ extension ISO_14496_22.FontSubsetter {
 
             // Remap glyph ID
             if let newGlyphID = oldToNew[oldGlyphID] {
-                data[offset + 2] = UInt8(newGlyphID >> 8)
-                data[offset + 3] = UInt8(newGlyphID & 0xFF)
+                data[offset + 2] = Byte(UInt8(newGlyphID >> 8))
+                data[offset + 3] = Byte(UInt8(newGlyphID & 0xFF))
             }
 
             offset += 4
@@ -203,10 +206,10 @@ extension ISO_14496_22.FontSubsetter {
     private func buildSubsetFont(
         sortedGlyphs: [UInt16],
         oldToNew: [UInt16: UInt16],
-        newGlyfData: [UInt8],
+        newGlyfData: [Byte],
         newLocaOffsets: [UInt32],
         characters: Set<Character>
-    ) -> [UInt8] {
+    ) -> [Byte] {
         let numGlyphs = UInt16(sortedGlyphs.count)
 
         // Determine loca format based on glyf size
@@ -224,7 +227,7 @@ extension ISO_14496_22.FontSubsetter {
         let nameData = buildNameTable()
 
         // Define table order (recommended order per spec)
-        let tables: [(tag: String, data: [UInt8])] = [
+        let tables: [(tag: String, data: [Byte])] = [
             ("head", headData),
             ("hhea", hheaData),
             ("maxp", maxpData),
@@ -240,7 +243,7 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     /// Build the offset table and table directory, then concatenate all tables
-    private func buildFontFile(tables: [(tag: String, data: [UInt8])]) -> [UInt8] {
+    private func buildFontFile(tables: [(tag: String, data: [Byte])]) -> [Byte] {
         let numTables = UInt16(tables.count)
 
         // Calculate searchRange, entrySelector, rangeShift
@@ -254,7 +257,7 @@ extension ISO_14496_22.FontSubsetter {
         let entrySelector = UInt16(log2)
         let rangeShift = numTables * 16 - searchRange
 
-        var output = [UInt8]()
+        var output = [Byte]()
 
         // Offset table (12 bytes)
         appendUInt32(&output, 0x0001_0000)  // sfnt version (TrueType)
@@ -281,7 +284,7 @@ extension ISO_14496_22.FontSubsetter {
         // Table directory
         for (index, (tag, _)) in tables.enumerated() {
             // Tag (4 bytes)
-            let tagBytes = [UInt8](tag.utf8)
+            let tagBytes = tag.utf8.map(Byte.init)
             output.append(contentsOf: tagBytes)
             for _ in tagBytes.count..<4 {
                 output.append(0x20)  // Pad with spaces
@@ -311,8 +314,8 @@ extension ISO_14496_22.FontSubsetter {
 
     // MARK: - Table Builders
 
-    private func buildHeadTable(useShortLoca: Bool) -> [UInt8] {
-        var data = [UInt8]()
+    private func buildHeadTable(useShortLoca: Bool) -> [Byte] {
+        var data = [Byte]()
 
         let head = fontFile.head
 
@@ -338,8 +341,8 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildHheaTable(numGlyphs: UInt16, sortedGlyphs: [UInt16]) -> [UInt8] {
-        var data = [UInt8]()
+    private func buildHheaTable(numGlyphs: UInt16, sortedGlyphs: [UInt16]) -> [Byte] {
+        var data = [Byte]()
 
         let hhea = fontFile.hhea
 
@@ -369,8 +372,8 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildMaxpTable(numGlyphs: UInt16) -> [UInt8] {
-        var data = [UInt8]()
+    private func buildMaxpTable(numGlyphs: UInt16) -> [Byte] {
+        var data = [Byte]()
 
         let maxp = fontFile.maxp
 
@@ -393,8 +396,8 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildHmtxTable(sortedGlyphs: [UInt16], numGlyphs: UInt16) -> [UInt8] {
-        var data = [UInt8]()
+    private func buildHmtxTable(sortedGlyphs: [UInt16], numGlyphs: UInt16) -> [Byte] {
+        var data = [Byte]()
 
         for oldGlyphID in sortedGlyphs {
             let advanceWidth = fontFile.hmtx.advanceWidth(for: oldGlyphID)
@@ -406,7 +409,7 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildCmapTable(characters: Set<Character>, oldToNew: [UInt16: UInt16]) -> [UInt8] {
+    private func buildCmapTable(characters: Set<Character>, oldToNew: [UInt16: UInt16]) -> [Byte] {
         // Build character to new glyph ID mapping
         var charToGlyph: [(UInt32, UInt16)] = []
 
@@ -424,7 +427,7 @@ extension ISO_14496_22.FontSubsetter {
         charToGlyph.sort { $0.0 < $1.0 }
 
         // Build format 4 subtable for BMP characters
-        var data = [UInt8]()
+        var data = [Byte]()
 
         // cmap header
         appendUInt16(&data, 0)  // version
@@ -442,7 +445,7 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildCmapFormat4(charToGlyph: [(UInt32, UInt16)]) -> [UInt8] {
+    private func buildCmapFormat4(charToGlyph: [(UInt32, UInt16)]) -> [Byte] {
         // Filter to BMP only and build segments
         let bmpMappings = charToGlyph.filter { $0.0 <= 0xFFFF }
 
@@ -500,7 +503,7 @@ extension ISO_14496_22.FontSubsetter {
         let reservedPad = 2
         let length = UInt16(headerSize + arraySize + reservedPad)
 
-        var data = [UInt8]()
+        var data = [Byte]()
 
         appendUInt16(&data, 4)  // format
         appendUInt16(&data, length)
@@ -536,8 +539,8 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildLocaTable(offsets: [UInt32], useShort: Bool) -> [UInt8] {
-        var data = [UInt8]()
+    private func buildLocaTable(offsets: [UInt32], useShort: Bool) -> [Byte] {
+        var data = [Byte]()
 
         if useShort {
             for offset in offsets {
@@ -552,8 +555,8 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildPostTable() -> [UInt8] {
-        var data = [UInt8]()
+    private func buildPostTable() -> [Byte] {
+        var data = [Byte]()
 
         // Use format 3.0 (no glyph names - saves space)
         appendUInt32(&data, 0x0003_0000)  // version 3.0
@@ -572,12 +575,12 @@ extension ISO_14496_22.FontSubsetter {
         return data
     }
 
-    private func buildNameTable() -> [UInt8] {
-        var data = [UInt8]()
+    private func buildNameTable() -> [Byte] {
+        var data = [Byte]()
 
         // Minimal name table with just PostScript name
         let psName = fontFile.postScriptName
-        let psNameBytes = [UInt8](psName.utf16.flatMap { [UInt8($0 >> 8), UInt8($0 & 0xFF)] })
+        let psNameBytes = psName.utf16.flatMap { [Byte(UInt8($0 >> 8)), Byte(UInt8($0 & 0xFF))] }
 
         appendUInt16(&data, 0)  // format
         appendUInt16(&data, 1)  // count
@@ -598,7 +601,7 @@ extension ISO_14496_22.FontSubsetter {
 
     // MARK: - Binary Helpers
 
-    private func calculateChecksum(_ data: [UInt8]) -> UInt32 {
+    private func calculateChecksum(_ data: [Byte]) -> UInt32 {
         var sum: UInt32 = 0
         var i = 0
         while i < data.count {
@@ -615,27 +618,27 @@ extension ISO_14496_22.FontSubsetter {
         return sum
     }
 
-    private func appendUInt16(_ data: inout [UInt8], _ value: UInt16) {
-        data.append(UInt8(value >> 8))
-        data.append(UInt8(value & 0xFF))
+    private func appendUInt16(_ data: inout [Byte], _ value: UInt16) {
+        data.append(Byte(UInt8(value >> 8)))
+        data.append(Byte(UInt8(value & 0xFF)))
     }
 
-    private func appendInt16(_ data: inout [UInt8], _ value: Int16) {
+    private func appendInt16(_ data: inout [Byte], _ value: Int16) {
         appendUInt16(&data, UInt16(bitPattern: value))
     }
 
-    private func appendUInt32(_ data: inout [UInt8], _ value: UInt32) {
-        data.append(UInt8((value >> 24) & 0xFF))
-        data.append(UInt8((value >> 16) & 0xFF))
-        data.append(UInt8((value >> 8) & 0xFF))
-        data.append(UInt8(value & 0xFF))
+    private func appendUInt32(_ data: inout [Byte], _ value: UInt32) {
+        data.append(Byte(UInt8((value >> 24) & 0xFF)))
+        data.append(Byte(UInt8((value >> 16) & 0xFF)))
+        data.append(Byte(UInt8((value >> 8) & 0xFF)))
+        data.append(Byte(UInt8(value & 0xFF)))
     }
 
-    private func appendInt32(_ data: inout [UInt8], _ value: Int32) {
+    private func appendInt32(_ data: inout [Byte], _ value: Int32) {
         appendUInt32(&data, UInt32(bitPattern: value))
     }
 
-    private func appendInt64(_ data: inout [UInt8], _ value: Int64) {
+    private func appendInt64(_ data: inout [Byte], _ value: Int64) {
         appendUInt32(&data, UInt32((value >> 32) & 0xFFFF_FFFF))
         appendUInt32(&data, UInt32(value & 0xFFFF_FFFF))
     }
