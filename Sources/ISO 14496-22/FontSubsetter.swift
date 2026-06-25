@@ -11,6 +11,7 @@
 
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
+internal import Binary_Primitives_Standard_Library_Integration
 
 extension ISO_14496_22 {
     /// Creates subset fonts containing only required glyphs.
@@ -171,13 +172,12 @@ extension ISO_14496_22.FontSubsetter {
         var hasMoreComponents = true
 
         while hasMoreComponents && offset + 4 <= data.count {
-            let flags = UInt16(data[offset]) << 8 | UInt16(data[offset + 1])
-            let oldGlyphID = UInt16(data[offset + 2]) << 8 | UInt16(data[offset + 3])
+            let flags = UInt16(bytes: data[offset..<offset + 2], endianness: .big)!
+            let oldGlyphID = UInt16(bytes: data[offset + 2..<offset + 4], endianness: .big)!
 
             // Remap glyph ID
             if let newGlyphID = oldToNew[oldGlyphID] {
-                data[offset + 2] = Byte(UInt8(newGlyphID >> 8))
-                data[offset + 3] = Byte(UInt8(newGlyphID & 0xFF))
+                data.replaceSubrange(offset + 2..<offset + 4, with: newGlyphID.bytes(endianness: .big))
             }
 
             offset += 4
@@ -580,7 +580,7 @@ extension ISO_14496_22.FontSubsetter {
 
         // Minimal name table with just PostScript name
         let psName = fontFile.postScriptName
-        let psNameBytes = psName.utf16.flatMap { [Byte(UInt8($0 >> 8)), Byte(UInt8($0 & 0xFF))] }
+        let psNameBytes = psName.utf16.flatMap { $0.bytes(endianness: .big) }
 
         appendUInt16(&data, 0)  // format
         appendUInt16(&data, 1)  // count
@@ -619,27 +619,22 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     private func appendUInt16(_ data: inout [Byte], _ value: UInt16) {
-        data.append(Byte(UInt8(value >> 8)))
-        data.append(Byte(UInt8(value & 0xFF)))
+        value.bytes(into: &data, endianness: .big)
     }
 
     private func appendInt16(_ data: inout [Byte], _ value: Int16) {
-        appendUInt16(&data, UInt16(bitPattern: value))
+        value.bytes(into: &data, endianness: .big)
     }
 
     private func appendUInt32(_ data: inout [Byte], _ value: UInt32) {
-        data.append(Byte(UInt8((value >> 24) & 0xFF)))
-        data.append(Byte(UInt8((value >> 16) & 0xFF)))
-        data.append(Byte(UInt8((value >> 8) & 0xFF)))
-        data.append(Byte(UInt8(value & 0xFF)))
+        value.bytes(into: &data, endianness: .big)
     }
 
     private func appendInt32(_ data: inout [Byte], _ value: Int32) {
-        appendUInt32(&data, UInt32(bitPattern: value))
+        value.bytes(into: &data, endianness: .big)
     }
 
     private func appendInt64(_ data: inout [Byte], _ value: Int64) {
-        appendUInt32(&data, UInt32((value >> 32) & 0xFFFF_FFFF))
-        appendUInt32(&data, UInt32(value & 0xFFFF_FFFF))
+        value.bytes(into: &data, endianness: .big)
     }
 }

@@ -9,6 +9,7 @@
 
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
+internal import Binary_Primitives_Standard_Library_Integration
 
 extension ISO_14496_22 {
     /// Glyph data table ('glyf')
@@ -51,7 +52,7 @@ extension ISO_14496_22 {
         public func isComposite(start: UInt32, end: UInt32) -> Bool {
             let startIndex = Int(start)
             guard startIndex + 2 <= data.count, start < end else { return false }
-            let numberOfContours = Int16(bitPattern: UInt16(data[startIndex]) << 8 | UInt16(data[startIndex + 1]))
+            let numberOfContours = Int16(bytes: data[startIndex..<startIndex + 2], endianness: .big)!
             return numberOfContours < 0
         }
 
@@ -78,8 +79,8 @@ extension ISO_14496_22 {
             var hasMoreComponents = true
 
             while hasMoreComponents && offset + 4 <= data.count {
-                let flags = UInt16(data[offset]) << 8 | UInt16(data[offset + 1])
-                let glyphIndex = UInt16(data[offset + 2]) << 8 | UInt16(data[offset + 3])
+                let flags = UInt16(bytes: data[offset..<offset + 2], endianness: .big)!
+                let glyphIndex = UInt16(bytes: data[offset + 2..<offset + 4], endianness: .big)!
 
                 components.append(glyphIndex)
                 offset += 4

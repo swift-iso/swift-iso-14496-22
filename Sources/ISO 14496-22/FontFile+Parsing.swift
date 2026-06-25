@@ -3,6 +3,7 @@
 
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
+internal import Binary_Primitives_Standard_Library_Integration
 
 extension ISO_14496_22.FontFile {
     /// Parse a font file from binary data
@@ -446,7 +447,7 @@ extension ISO_14496_22.FontFile {
                         // UTF-16 BE
                         var chars: [UInt16] = []
                         for j in stride(from: 0, to: stringBytes.count - 1, by: 2) {
-                            chars.append(UInt16(stringBytes[j]) << 8 | UInt16(stringBytes[j + 1]))
+                            chars.append(UInt16(bytes: stringBytes[j..<j + 2], endianness: .big)!)
                         }
                         strings[nameID] = String(decoding: chars, as: UTF16.self)
                     } else if platformID == 1 {
@@ -547,21 +548,21 @@ extension ISO_14496_22.FontFile {
 // MARK: - Binary Reading Helpers
 
 private func readUInt16(_ data: [Byte], at offset: Int) -> UInt16 {
-    UInt16(data[offset]) << 8 | UInt16(data[offset + 1])
+    UInt16(bytes: data[offset..<offset + 2], endianness: .big)!
 }
 
 private func readInt16(_ data: [Byte], at offset: Int) -> Int16 {
-    Int16(bitPattern: readUInt16(data, at: offset))
+    Int16(bytes: data[offset..<offset + 2], endianness: .big)!
 }
 
 private func readUInt32(_ data: [Byte], at offset: Int) -> UInt32 {
-    UInt32(data[offset]) << 24 | UInt32(data[offset + 1]) << 16 | UInt32(data[offset + 2]) << 8 | UInt32(data[offset + 3])
+    UInt32(bytes: data[offset..<offset + 4], endianness: .big)!
 }
 
 private func readInt32(_ data: [Byte], at offset: Int) -> Int32 {
-    Int32(bitPattern: readUInt32(data, at: offset))
+    Int32(bytes: data[offset..<offset + 4], endianness: .big)!
 }
 
 private func readInt64(_ data: [Byte], at offset: Int) -> Int64 {
-    Int64(readUInt32(data, at: offset)) << 32 | Int64(readUInt32(data, at: offset + 4))
+    Int64(bytes: data[offset..<offset + 8], endianness: .big)!
 }

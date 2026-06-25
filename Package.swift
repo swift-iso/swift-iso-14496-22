@@ -27,6 +27,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Binary Primitives", package: "swift-binary-primitives"),
+                .product(name: "Binary Primitives Standard Library Integration", package: "swift-binary-primitives"),
                 .product(name: "Byte Primitives", package: "swift-byte-primitives"),
                 .product(name: "Byte Primitives Standard Library Integration", package: "swift-byte-primitives")
             ]
