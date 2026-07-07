@@ -9,10 +9,10 @@
 // > A font subset shall be a valid font that includes a subset
 // > of the glyphs in the original font.
 
+internal import Binary_Endianness_Primitives
+internal import Binary_Primitives_Standard_Library_Integration
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
-internal import Binary_Primitives_Standard_Library_Integration
-internal import Binary_Endianness_Primitives
 
 extension ISO_14496_22 {
     /// Creates subset fonts containing only required glyphs.

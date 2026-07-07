@@ -1,8 +1,8 @@
 // FontFileTests.swift
 // Tests for ISO 14496-22 font parsing
 
-import Testing
 import Byte_Primitives
+import Testing
 
 @testable import ISO_14496_22
 

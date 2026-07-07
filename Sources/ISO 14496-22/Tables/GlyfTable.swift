@@ -7,10 +7,10 @@
 // Per ISO/IEC 14496-22:2019, Section 5.3.4:
 // > The glyf table contains the data that defines the appearance of the glyphs.
 
+internal import Binary_Endianness_Primitives
+internal import Binary_Primitives_Standard_Library_Integration
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
-internal import Binary_Primitives_Standard_Library_Integration
-internal import Binary_Endianness_Primitives
 
 extension ISO_14496_22 {
     /// Glyph data table ('glyf')
