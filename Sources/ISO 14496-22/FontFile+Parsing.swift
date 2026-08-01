@@ -66,7 +66,7 @@ extension ISO_14496_22.FontFile {
     }
 
     /// Parsing errors
-    public enum ParsingError: Error, Sendable {
+    public enum ParsingError: Swift.Error, Sendable {
         case invalidData(String)
         case missingTable(String)
         case unsupportedFormat(String)
@@ -195,7 +195,7 @@ extension ISO_14496_22.FontFile {
         var hMetrics: [ISO_14496_22.LongHorMetric] = []
         hMetrics.reserveCapacity(nHMetrics)
 
-        for i in 0..<nHMetrics {
+        (0..<nHMetrics).forEach { i in
             let offset = o + i * 4
             hMetrics.append(
                 ISO_14496_22.LongHorMetric(
@@ -208,7 +208,7 @@ extension ISO_14496_22.FontFile {
         var leftSideBearings: [Int16] = []
         if lsbCount > 0 {
             leftSideBearings.reserveCapacity(lsbCount)
-            for i in 0..<lsbCount {
+            (0..<lsbCount).forEach { i in
                 let offset = o + hMetricsSize + i * 2
                 leftSideBearings.append(readInt16(data, at: offset))
             }
@@ -334,7 +334,7 @@ extension ISO_14496_22.FontFile {
 
             if startCode == 0xFFFF { break }  // End marker
 
-            for code in startCode...endCode {
+            (startCode...endCode).forEach { code in
                 let glyphIndex: UInt16
                 if idRangeOffset == 0 {
                     glyphIndex = UInt16(truncatingIfNeeded: Int(code) + Int(idDelta))
@@ -375,7 +375,7 @@ extension ISO_14496_22.FontFile {
 
         var mapping: [UInt32: UInt16] = [:]
 
-        for i in 0..<Int(numGroups) {
+        (0..<Int(numGroups)).forEach { i in
             let groupOffset = groupsOffset + i * 12
             let startCharCode = readUInt32(data, at: groupOffset)
             let endCharCode = readUInt32(data, at: groupOffset + 4)
@@ -512,7 +512,7 @@ extension ISO_14496_22.FontFile {
             let expectedSize = numEntries * 2
             guard o + expectedSize <= data.count else { return nil }
 
-            for i in 0..<numEntries {
+            (0..<numEntries).forEach { i in
                 let offset = readUInt16(data, at: o + i * 2)
                 offsets.append(UInt32(offset) * 2)  // Short offsets are halved
             }
@@ -521,7 +521,7 @@ extension ISO_14496_22.FontFile {
             let expectedSize = numEntries * 4
             guard o + expectedSize <= data.count else { return nil }
 
-            for i in 0..<numEntries {
+            (0..<numEntries).forEach { i in
                 offsets.append(readUInt32(data, at: o + i * 4))
             }
         }

@@ -107,7 +107,7 @@ extension ISO_14496_22 {
         }
 
         /// Errors that can occur during subsetting
-        public enum SubsetError: Error, Sendable {
+        public enum SubsetError: Swift.Error, Sendable {
             case missingTables(String)
             case invalidGlyph(String)
             case buildFailed(String)
@@ -464,7 +464,7 @@ extension ISO_14496_22.FontSubsetter {
             var segEnd = segStart
             var segDelta = computeDelta(glyph: bmpMappings[0].1, code: segStart)
 
-            for i in 1..<bmpMappings.count {
+            (1..<bmpMappings.count).forEach { i in
                 let code = UInt16(bmpMappings[i].0)
                 let glyph = bmpMappings[i].1
                 let newDelta = computeDelta(glyph: glyph, code: code)
@@ -607,7 +607,7 @@ extension ISO_14496_22.FontSubsetter {
         var i = 0
         while i < data.count {
             var value: UInt32 = 0
-            for j in 0..<4 {
+            (0..<4).forEach { j in
                 value = value << 8
                 if i + j < data.count {
                     value |= UInt32(data[i + j])
