@@ -53,7 +53,10 @@ extension ISO_14496_22 {
         public func isComposite(start: UInt32, end: UInt32) -> Bool {
             let startIndex = Int(start)
             guard startIndex + 2 <= data.count, start < end else { return false }
-            let numberOfContours = Int16(bytes: data[startIndex..<startIndex + 2], endianness: .big)!
+            let numberOfContours = Int16(
+                bytes: data[startIndex..<startIndex + 2],
+                endianness: .big
+            )!
             return numberOfContours < 0
         }
 
@@ -71,10 +74,15 @@ extension ISO_14496_22 {
             var offset = startIndex + 10
 
             // Composite glyph flags
+            // swift-format-ignore: AlwaysUseLowerCamelCase
             let ARG_1_AND_2_ARE_WORDS: UInt16 = 0x0001
+            // swift-format-ignore: AlwaysUseLowerCamelCase
             let WE_HAVE_A_SCALE: UInt16 = 0x0008
+            // swift-format-ignore: AlwaysUseLowerCamelCase
             let MORE_COMPONENTS: UInt16 = 0x0020
+            // swift-format-ignore: AlwaysUseLowerCamelCase
             let WE_HAVE_AN_X_AND_Y_SCALE: UInt16 = 0x0040
+            // swift-format-ignore: AlwaysUseLowerCamelCase
             let WE_HAVE_A_TWO_BY_TWO: UInt16 = 0x0080
 
             var hasMoreComponents = true

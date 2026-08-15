@@ -243,7 +243,9 @@ struct CmapTableTests {
                 }
             }
 
-            print("First 100 glyphs: \(simpleCount) simple, \(compositeCount) composite, \(emptyCount) empty")
+            print(
+                "First 100 glyphs: \(simpleCount) simple, \(compositeCount) composite, \(emptyCount) empty"
+            )
             #expect(simpleCount > 0)  // Most fonts have simple glyphs
         }
     }

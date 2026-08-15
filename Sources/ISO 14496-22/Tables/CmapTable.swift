@@ -19,7 +19,11 @@ extension ISO_14496_22 {
         /// The primary Unicode mapping (best available subtable)
         public let unicodeMapping: [UInt32: UInt16]
 
-        public init(version: UInt16, encodingRecords: [EncodingRecord], unicodeMapping: [UInt32: UInt16]) {
+        public init(
+            version: UInt16,
+            encodingRecords: [EncodingRecord],
+            unicodeMapping: [UInt32: UInt16]
+        ) {
             self.version = version
             self.encodingRecords = encodingRecords
             self.unicodeMapping = unicodeMapping
@@ -96,18 +100,22 @@ extension ISO_14496_22 {
 
     /// Unicode encoding IDs
     public enum UnicodeEncodingID: UInt16, Sendable, Equatable {
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         /// Unicode 1.0 semantics (deprecated)
         case unicode1_0 = 0
 
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         /// Unicode 1.1 semantics (deprecated)
         case unicode1_1 = 1
 
         /// ISO/IEC 10646 semantics (deprecated)
         case iso10646 = 2
 
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         /// Unicode 2.0+ BMP only
         case unicode2_0_BMP = 3
 
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         /// Unicode 2.0+ full repertoire
         case unicode2_0_Full = 4
 
