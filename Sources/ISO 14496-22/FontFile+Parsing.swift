@@ -27,7 +27,10 @@ extension ISO_14496_22.FontFile {
         // 0x4F54544F = 'OTTO' (OpenType with CFF)
         // 0x74727565 = 'true' (TrueType on Mac)
         // 0x74797031 = 'typ1' (old-style PostScript on Mac)
-        guard sfntVersion == 0x0001_0000 || sfntVersion == 0x4F54_544F || sfntVersion == 0x7472_7565 || sfntVersion == 0x7479_7031 else {
+        guard
+            sfntVersion == 0x0001_0000 || sfntVersion == 0x4F54_544F || sfntVersion == 0x7472_7565
+                || sfntVersion == 0x7479_7031
+        else {
             throw ParsingError.invalidData("Invalid sfnt version: \(sfntVersion)")
         }
 
@@ -55,13 +58,23 @@ extension ISO_14496_22.FontFile {
         self.head = try Self.parseHead(data: data, tableOffsets: tableOffsets)
         self.hhea = try Self.parseHhea(data: data, tableOffsets: tableOffsets)
         self.maxp = try Self.parseMaxp(data: data, tableOffsets: tableOffsets)
-        self.hmtx = try Self.parseHmtx(data: data, tableOffsets: tableOffsets, numberOfHMetrics: hhea.numberOfHMetrics, numGlyphs: maxp.numGlyphs)
+        self.hmtx = try Self.parseHmtx(
+            data: data,
+            tableOffsets: tableOffsets,
+            numberOfHMetrics: hhea.numberOfHMetrics,
+            numGlyphs: maxp.numGlyphs
+        )
         self.cmap = try Self.parseCmap(data: data, tableOffsets: tableOffsets)
         self.name = try Self.parseName(data: data, tableOffsets: tableOffsets)
         self.post = try Self.parsePost(data: data, tableOffsets: tableOffsets)
 
         // Parse optional tables for subsetting (TrueType only, not CFF)
-        self.loca = Self.parseLoca(data: data, tableOffsets: tableOffsets, indexToLocFormat: head.indexToLocFormat, numGlyphs: maxp.numGlyphs)
+        self.loca = Self.parseLoca(
+            data: data,
+            tableOffsets: tableOffsets,
+            indexToLocFormat: head.indexToLocFormat,
+            numGlyphs: maxp.numGlyphs
+        )
         self.glyf = Self.parseGlyf(data: data, tableOffsets: tableOffsets)
     }
 
@@ -76,7 +89,10 @@ extension ISO_14496_22.FontFile {
 // MARK: - Table Parsing
 
 extension ISO_14496_22.FontFile {
-    static func parseHead(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.HeadTable {
+    static func parseHead(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) throws(ParsingError) -> ISO_14496_22.HeadTable {
         guard let table = tableOffsets["head"] else {
             throw ParsingError.missingTable("head")
         }
@@ -107,7 +123,10 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parseHhea(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.HheaTable {
+    static func parseHhea(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) throws(ParsingError) -> ISO_14496_22.HheaTable {
         guard let table = tableOffsets["hhea"] else {
             throw ParsingError.missingTable("hhea")
         }
@@ -138,7 +157,10 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parseMaxp(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.MaxpTable {
+    static func parseMaxp(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) throws(ParsingError) -> ISO_14496_22.MaxpTable {
         guard let table = tableOffsets["maxp"] else {
             throw ParsingError.missingTable("maxp")
         }
@@ -174,7 +196,12 @@ extension ISO_14496_22.FontFile {
         }
     }
 
-    static func parseHmtx(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)], numberOfHMetrics: UInt16, numGlyphs: UInt16) throws(ParsingError) -> ISO_14496_22.HmtxTable {
+    static func parseHmtx(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)],
+        numberOfHMetrics: UInt16,
+        numGlyphs: UInt16
+    ) throws(ParsingError) -> ISO_14496_22.HmtxTable {
         guard let table = tableOffsets["hmtx"] else {
             throw ParsingError.missingTable("hmtx")
         }
@@ -221,7 +248,10 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parseCmap(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.CmapTable {
+    static func parseCmap(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) throws(ParsingError) -> ISO_14496_22.CmapTable {
         guard let table = tableOffsets["cmap"] else {
             throw ParsingError.missingTable("cmap")
         }
@@ -288,8 +318,10 @@ extension ISO_14496_22.FontFile {
                 switch format {
                 case 4:
                     unicodeMapping = try parseFormat4(data: data, offset: subtableStart)
+
                 case 12:
                     unicodeMapping = try parseFormat12(data: data, offset: subtableStart)
+
                 default:
                     // Unsupported format, leave mapping empty
                     break
@@ -305,7 +337,10 @@ extension ISO_14496_22.FontFile {
     }
 
     /// Parse cmap format 4 (segment mapping to delta values)
-    private static func parseFormat4(data: [Byte], offset: Int) throws(ParsingError) -> [UInt32: UInt16] {
+    private static func parseFormat4(
+        data: [Byte],
+        offset: Int
+    ) throws(ParsingError) -> [UInt32: UInt16] {
         guard offset + 14 <= data.count else {
             throw ParsingError.invalidData("cmap format 4 header too small")
         }
@@ -339,7 +374,8 @@ extension ISO_14496_22.FontFile {
                 if idRangeOffset == 0 {
                     glyphIndex = UInt16(truncatingIfNeeded: Int(code) + Int(idDelta))
                 } else {
-                    let glyphIdOffset = idRangeOffsetOffset + i * 2 + Int(idRangeOffset) + Int(code - startCode) * 2
+                    let glyphIdOffset =
+                        idRangeOffsetOffset + i * 2 + Int(idRangeOffset) + Int(code - startCode) * 2
                     if glyphIdOffset + 2 <= data.count {
                         let glyphId = readUInt16(data, at: glyphIdOffset)
                         if glyphId != 0 {
@@ -361,7 +397,10 @@ extension ISO_14496_22.FontFile {
     }
 
     /// Parse cmap format 12 (segmented coverage)
-    private static func parseFormat12(data: [Byte], offset: Int) throws(ParsingError) -> [UInt32: UInt16] {
+    private static func parseFormat12(
+        data: [Byte],
+        offset: Int
+    ) throws(ParsingError) -> [UInt32: UInt16] {
         guard offset + 16 <= data.count else {
             throw ParsingError.invalidData("cmap format 12 header too small")
         }
@@ -392,7 +431,10 @@ extension ISO_14496_22.FontFile {
         return mapping
     }
 
-    static func parseName(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.NameTable {
+    static func parseName(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) throws(ParsingError) -> ISO_14496_22.NameTable {
         guard let table = tableOffsets["name"] else {
             throw ParsingError.missingTable("name")
         }
@@ -441,7 +483,8 @@ extension ISO_14496_22.FontFile {
 
                 // Prefer Windows Unicode (platform 3, encoding 1) or Unicode (platform 0)
                 let isUnicode = platformID == 3 || platformID == 0
-                let isEnglish = languageID == 0x0409 || languageID == 0  // English US or Mac English
+                // English US or Mac English
+                let isEnglish = languageID == 0x0409 || languageID == 0
 
                 if isEnglish && strings[nameID] == nil {
                     if isUnicode {
@@ -466,7 +509,10 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    static func parsePost(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)]) throws(ParsingError) -> ISO_14496_22.PostTable {
+    static func parsePost(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) throws(ParsingError) -> ISO_14496_22.PostTable {
         guard let table = tableOffsets["post"] else {
             throw ParsingError.missingTable("post")
         }
@@ -497,7 +543,12 @@ extension ISO_14496_22.FontFile {
     /// - Parameters:
     ///   - indexToLocFormat: 0 for short (2-byte), 1 for long (4-byte)
     ///   - numGlyphs: Number of glyphs from maxp table
-    static func parseLoca(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)], indexToLocFormat: Int16, numGlyphs: UInt16) -> ISO_14496_22.LocaTable? {
+    static func parseLoca(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)],
+        indexToLocFormat: Int16,
+        numGlyphs: UInt16
+    ) -> ISO_14496_22.LocaTable? {
         guard let table = tableOffsets["loca"] else {
             return nil  // CFF fonts don't have loca
         }
@@ -530,7 +581,10 @@ extension ISO_14496_22.FontFile {
     }
 
     /// Parse glyf table (optional, TrueType only)
-    static func parseGlyf(data: [Byte], tableOffsets: [String: (offset: UInt32, length: UInt32)]) -> ISO_14496_22.GlyfTable? {
+    static func parseGlyf(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) -> ISO_14496_22.GlyfTable? {
         guard let table = tableOffsets["glyf"] else {
             return nil  // CFF fonts don't have glyf
         }

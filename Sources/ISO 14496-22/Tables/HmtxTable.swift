@@ -19,7 +19,8 @@ extension ISO_14496_22 {
         /// Number of glyphs with full metrics
         public let numberOfHMetrics: UInt16
 
-        public init(hMetrics: [LongHorMetric], leftSideBearings: [Int16], numberOfHMetrics: UInt16) {
+        public init(hMetrics: [LongHorMetric], leftSideBearings: [Int16], numberOfHMetrics: UInt16)
+        {
             self.hMetrics = hMetrics
             self.leftSideBearings = leftSideBearings
             self.numberOfHMetrics = numberOfHMetrics

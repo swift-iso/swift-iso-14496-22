@@ -37,7 +37,9 @@ extension ISO_14496_22 {
         /// - Throws: `SubsetError` if subsetting fails
         public func subset(characters: Set<Character>) throws(SubsetError) -> [Byte] {
             guard let loca = fontFile.loca, let glyf = fontFile.glyf else {
-                throw SubsetError.missingTables("Font missing loca/glyf tables (CFF fonts not supported)")
+                throw SubsetError.missingTables(
+                    "Font missing loca/glyf tables (CFF fonts not supported)"
+                )
             }
 
             // Step 1: Collect required glyph IDs
@@ -164,10 +166,15 @@ extension ISO_14496_22.FontSubsetter {
         // Skip header: numberOfContours (2) + xMin (2) + yMin (2) + xMax (2) + yMax (2) = 10 bytes
         var offset = 10
 
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let ARG_1_AND_2_ARE_WORDS: UInt16 = 0x0001
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let WE_HAVE_A_SCALE: UInt16 = 0x0008
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let MORE_COMPONENTS: UInt16 = 0x0020
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let WE_HAVE_AN_X_AND_Y_SCALE: UInt16 = 0x0040
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let WE_HAVE_A_TWO_BY_TWO: UInt16 = 0x0080
 
         var hasMoreComponents = true
@@ -178,7 +185,10 @@ extension ISO_14496_22.FontSubsetter {
 
             // Remap glyph ID
             if let newGlyphID = oldToNew[oldGlyphID] {
-                data.replaceSubrange(offset + 2..<offset + 4, with: newGlyphID.bytes(endianness: .big))
+                data.replaceSubrange(
+                    offset + 2..<offset + 4,
+                    with: newGlyphID.bytes(endianness: .big)
+                )
             }
 
             offset += 4
@@ -322,7 +332,10 @@ extension ISO_14496_22.FontSubsetter {
 
         appendUInt16(&data, head.majorVersion)
         appendUInt16(&data, head.minorVersion)
-        appendInt32(&data, Int32(head.fontRevision.integer) << 16 | Int32(head.fontRevision.fraction))
+        appendInt32(
+            &data,
+            Int32(head.fontRevision.integer) << 16 | Int32(head.fontRevision.fraction)
+        )
         appendUInt32(&data, 0)  // checksumAdjustment (placeholder)
         appendUInt32(&data, head.magicNumber)
         appendUInt16(&data, head.flags.rawValue)
@@ -499,7 +512,8 @@ extension ISO_14496_22.FontSubsetter {
         let rangeShift = segCountX2 - searchRange
 
         // Calculate table length
-        let headerSize = 14  // format + length + language + segCountX2 + searchRange + entrySelector + rangeShift
+        // format + length + language + segCountX2 + searchRange + entrySelector + rangeShift
+        let headerSize = 14
         let arraySize = Int(segCount) * 2 * 4  // 4 arrays of 2-byte values
         let reservedPad = 2
         let length = UInt16(headerSize + arraySize + reservedPad)
