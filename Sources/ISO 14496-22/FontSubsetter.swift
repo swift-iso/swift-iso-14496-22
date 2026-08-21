@@ -1,40 +1,18 @@
-// FontSubsetter.swift
-// Creates a subset font containing only specific glyphs
-//
-// Font subsetting reduces PDF file size by including only the glyphs
-// that are actually used in the document. A typical font is 200KB+
-// but a subset with just ASCII characters might be 5-20KB.
-//
-// Per ISO/IEC 14496-22:2019, Section 5.1.2:
-// > A font subset shall be a valid font that includes a subset
-// > of the glyphs in the original font.
-
 internal import Binary_Endianness_Primitives
 internal import Binary_Primitives_Standard_Library_Integration
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
 
 extension ISO_14496_22 {
-    /// Creates subset fonts containing only required glyphs.
-    ///
-    /// Usage:
-    /// ```swift
-    /// let subsetter = FontSubsetter(fontFile: font)
-    /// let subsetData = try subsetter.subset(characters: usedCharacters)
-    /// ```
+
     public struct FontSubsetter: Sendable {
-        /// The original font file
+
         public let fontFile: FontFile
 
         public init(fontFile: FontFile) {
             self.fontFile = fontFile
         }
 
-        /// Create a subset font containing only the specified characters.
-        ///
-        /// - Parameter characters: The characters to include in the subset
-        /// - Returns: Subset font data
-        /// - Throws: `SubsetError` if subsetting fails
         public func subset(characters: Set<Character>) throws(SubsetError) -> [Byte] {
             guard let loca = fontFile.loca, let glyf = fontFile.glyf else {
                 throw SubsetError.missingTables(
@@ -42,13 +20,10 @@ extension ISO_14496_22 {
                 )
             }
 
-            // Step 1: Collect required glyph IDs
             var requiredGlyphs = Set<UInt16>()
 
-            // Always include .notdef (glyph 0)
             requiredGlyphs.insert(0)
 
-            // Map characters to glyph IDs
             for char in characters {
                 for scalar in char.unicodeScalars {
                     if let glyphID = fontFile.cmap.glyphIndex(for: scalar.value) {
@@ -57,7 +32,6 @@ extension ISO_14496_22 {
                 }
             }
 
-            // Step 2: Recursively include composite glyph components
             var processed = Set<UInt16>()
             var toProcess = Array(requiredGlyphs)
 
@@ -65,7 +39,6 @@ extension ISO_14496_22 {
                 guard !processed.contains(glyphID) else { continue }
                 processed.insert(glyphID)
 
-                // Check if composite and add components
                 if let range = loca.glyphRange(for: glyphID) {
                     let components = glyf.componentGlyphIDs(start: range.start, end: range.end)
                     for component in components {
@@ -77,8 +50,6 @@ extension ISO_14496_22 {
                 }
             }
 
-            // Step 3: Create sorted glyph list and build remapping
-            // Glyph 0 must stay at index 0
             var sortedGlyphs = Array(requiredGlyphs).sorted()
             if let zeroIndex = sortedGlyphs.firstIndex(of: 0), zeroIndex != 0 {
                 sortedGlyphs.remove(at: zeroIndex)
@@ -90,7 +61,6 @@ extension ISO_14496_22 {
                 oldToNew[oldIndex] = UInt16(newIndex)
             }
 
-            // Step 4: Build new glyf and loca tables
             let (newGlyfData, newLocaOffsets) = buildGlyfAndLoca(
                 sortedGlyphs: sortedGlyphs,
                 oldToNew: oldToNew,
@@ -98,7 +68,6 @@ extension ISO_14496_22 {
                 glyf: glyf
             )
 
-            // Step 5: Build the subset font file
             return buildSubsetFont(
                 sortedGlyphs: sortedGlyphs,
                 oldToNew: oldToNew,
@@ -108,7 +77,6 @@ extension ISO_14496_22 {
             )
         }
 
-        /// Errors that can occur during subsetting
         public enum SubsetError: Swift.Error, Sendable {
             case missingTables(String)
             case invalidGlyph(String)
@@ -117,10 +85,8 @@ extension ISO_14496_22 {
     }
 }
 
-// MARK: - Private Helpers
-
 extension ISO_14496_22.FontSubsetter {
-    /// Build new glyf and loca tables with remapped glyph IDs
+
     private func buildGlyfAndLoca(
         sortedGlyphs: [UInt16],
         oldToNew: [UInt16: UInt16],
@@ -131,50 +97,45 @@ extension ISO_14496_22.FontSubsetter {
         var newLocaOffsets = [UInt32]()
 
         for oldGlyphID in sortedGlyphs {
-            // Record offset for this glyph
+
             newLocaOffsets.append(UInt32(newGlyfData.count))
 
             guard let range = loca.glyphRange(for: oldGlyphID) else {
-                continue  // Empty glyph
+                continue
             }
 
             guard var glyphData = glyf.glyphData(start: range.start, end: range.end) else {
-                continue  // Invalid range
+                continue
             }
 
-            // If composite, remap component glyph IDs
             if glyf.isComposite(start: range.start, end: range.end) {
                 remapCompositeGlyph(&glyphData, oldToNew: oldToNew)
             }
 
             newGlyfData.append(contentsOf: glyphData)
 
-            // Align to 2-byte boundary (optional but recommended)
             if newGlyfData.count % 2 != 0 {
                 newGlyfData.append(0)
             }
         }
 
-        // Add final offset (end of last glyph)
         newLocaOffsets.append(UInt32(newGlyfData.count))
 
         return (newGlyfData, newLocaOffsets)
     }
 
-    /// Remap glyph IDs in a composite glyph's data
     private func remapCompositeGlyph(_ data: inout [Byte], oldToNew: [UInt16: UInt16]) {
-        // Skip header: numberOfContours (2) + xMin (2) + yMin (2) + xMax (2) + yMax (2) = 10 bytes
+
         var offset = 10
 
-        // swift-format-ignore: AlwaysUseLowerCamelCase
         let ARG_1_AND_2_ARE_WORDS: UInt16 = 0x0001
-        // swift-format-ignore: AlwaysUseLowerCamelCase
+
         let WE_HAVE_A_SCALE: UInt16 = 0x0008
-        // swift-format-ignore: AlwaysUseLowerCamelCase
+
         let MORE_COMPONENTS: UInt16 = 0x0020
-        // swift-format-ignore: AlwaysUseLowerCamelCase
+
         let WE_HAVE_AN_X_AND_Y_SCALE: UInt16 = 0x0040
-        // swift-format-ignore: AlwaysUseLowerCamelCase
+
         let WE_HAVE_A_TWO_BY_TWO: UInt16 = 0x0080
 
         var hasMoreComponents = true
@@ -183,7 +144,6 @@ extension ISO_14496_22.FontSubsetter {
             let flags = UInt16(bytes: data[offset..<offset + 2], endianness: .big)!
             let oldGlyphID = UInt16(bytes: data[offset + 2..<offset + 4], endianness: .big)!
 
-            // Remap glyph ID
             if let newGlyphID = oldToNew[oldGlyphID] {
                 data.replaceSubrange(
                     offset + 2..<offset + 4,
@@ -193,14 +153,12 @@ extension ISO_14496_22.FontSubsetter {
 
             offset += 4
 
-            // Skip arguments
             if flags & ARG_1_AND_2_ARE_WORDS != 0 {
                 offset += 4
             } else {
                 offset += 2
             }
 
-            // Skip transformation
             if flags & WE_HAVE_A_SCALE != 0 {
                 offset += 2
             } else if flags & WE_HAVE_AN_X_AND_Y_SCALE != 0 {
@@ -213,7 +171,6 @@ extension ISO_14496_22.FontSubsetter {
         }
     }
 
-    /// Build the complete subset font file
     private func buildSubsetFont(
         sortedGlyphs: [UInt16],
         oldToNew: [UInt16: UInt16],
@@ -223,11 +180,8 @@ extension ISO_14496_22.FontSubsetter {
     ) -> [Byte] {
         let numGlyphs = UInt16(sortedGlyphs.count)
 
-        // Determine loca format based on glyf size
-        // Short format: offsets fit in 16 bits when divided by 2
-        let useShortLoca = newGlyfData.count <= 0x1FFFF  // 131070 bytes
+        let useShortLoca = newGlyfData.count <= 0x1FFFF
 
-        // Build individual tables
         let headData = buildHeadTable(useShortLoca: useShortLoca)
         let hheaData = buildHheaTable(numGlyphs: numGlyphs, sortedGlyphs: sortedGlyphs)
         let maxpData = buildMaxpTable(numGlyphs: numGlyphs)
@@ -237,7 +191,6 @@ extension ISO_14496_22.FontSubsetter {
         let postData = buildPostTable()
         let nameData = buildNameTable()
 
-        // Define table order (recommended order per spec)
         let tables: [(tag: String, data: [Byte])] = [
             ("head", headData),
             ("hhea", hheaData),
@@ -253,11 +206,9 @@ extension ISO_14496_22.FontSubsetter {
         return buildFontFile(tables: tables)
     }
 
-    /// Build the offset table and table directory, then concatenate all tables
     private func buildFontFile(tables: [(tag: String, data: [Byte])]) -> [Byte] {
         let numTables = UInt16(tables.count)
 
-        // Calculate searchRange, entrySelector, rangeShift
         var power = 1
         var log2 = 0
         while power * 2 <= numTables {
@@ -270,14 +221,12 @@ extension ISO_14496_22.FontSubsetter {
 
         var output = [Byte]()
 
-        // Offset table (12 bytes)
-        appendUInt32(&output, 0x0001_0000)  // sfnt version (TrueType)
+        appendUInt32(&output, 0x0001_0000)
         appendUInt16(&output, numTables)
         appendUInt16(&output, searchRange)
         appendUInt16(&output, entrySelector)
         appendUInt16(&output, rangeShift)
 
-        // Calculate table offsets
         let directorySize = 12 + Int(numTables) * 16
         var currentOffset = UInt32(directorySize)
         var tableLocations: [(offset: UInt32, length: UInt32, checksum: UInt32)] = []
@@ -287,34 +236,28 @@ extension ISO_14496_22.FontSubsetter {
             let checksum = calculateChecksum(data)
             tableLocations.append((currentOffset, length, checksum))
 
-            // Tables are 4-byte aligned
             let paddedLength = (data.count + 3) & ~3
             currentOffset += UInt32(paddedLength)
         }
 
-        // Table directory
         for (index, (tag, _)) in tables.enumerated() {
-            // Tag (4 bytes)
+
             let tagBytes = tag.utf8.map(Byte.init)
             output.append(contentsOf: tagBytes)
             for _ in tagBytes.count..<4 {
-                output.append(0x20)  // Pad with spaces
+                output.append(0x20)
             }
 
-            // Checksum (4 bytes)
             appendUInt32(&output, tableLocations[index].checksum)
 
-            // Offset (4 bytes)
             appendUInt32(&output, tableLocations[index].offset)
 
-            // Length (4 bytes)
             appendUInt32(&output, tableLocations[index].length)
         }
 
-        // Append table data (with padding)
         for (_, data) in tables {
             output.append(contentsOf: data)
-            // Pad to 4-byte boundary
+
             while output.count % 4 != 0 {
                 output.append(0)
             }
@@ -322,8 +265,6 @@ extension ISO_14496_22.FontSubsetter {
 
         return output
     }
-
-    // MARK: - Table Builders
 
     private func buildHeadTable(useShortLoca: Bool) -> [Byte] {
         var data = [Byte]()
@@ -336,7 +277,7 @@ extension ISO_14496_22.FontSubsetter {
             &data,
             Int32(head.fontRevision.integer) << 16 | Int32(head.fontRevision.fraction)
         )
-        appendUInt32(&data, 0)  // checksumAdjustment (placeholder)
+        appendUInt32(&data, 0)
         appendUInt32(&data, head.magicNumber)
         appendUInt16(&data, head.flags.rawValue)
         appendUInt16(&data, head.unitsPerEm)
@@ -349,7 +290,7 @@ extension ISO_14496_22.FontSubsetter {
         appendUInt16(&data, head.macStyle.rawValue)
         appendUInt16(&data, head.lowestRecPPEM)
         appendInt16(&data, head.fontDirectionHint)
-        appendInt16(&data, useShortLoca ? 0 : 1)  // indexToLocFormat
+        appendInt16(&data, useShortLoca ? 0 : 1)
         appendInt16(&data, head.glyphDataFormat)
 
         return data
@@ -360,8 +301,6 @@ extension ISO_14496_22.FontSubsetter {
 
         let hhea = fontFile.hhea
 
-        // Recalculate numberOfHMetrics based on subset
-        // For simplicity, use numGlyphs (all glyphs have full metrics)
         let numberOfHMetrics = numGlyphs
 
         appendUInt16(&data, hhea.majorVersion)
@@ -376,10 +315,10 @@ extension ISO_14496_22.FontSubsetter {
         appendInt16(&data, hhea.caretSlopeRise)
         appendInt16(&data, hhea.caretSlopeRun)
         appendInt16(&data, hhea.caretOffset)
-        appendInt16(&data, 0)  // reserved
-        appendInt16(&data, 0)  // reserved
-        appendInt16(&data, 0)  // reserved
-        appendInt16(&data, 0)  // reserved
+        appendInt16(&data, 0)
+        appendInt16(&data, 0)
+        appendInt16(&data, 0)
+        appendInt16(&data, 0)
         appendInt16(&data, hhea.metricDataFormat)
         appendUInt16(&data, numberOfHMetrics)
 
@@ -391,7 +330,7 @@ extension ISO_14496_22.FontSubsetter {
 
         let maxp = fontFile.maxp
 
-        appendUInt32(&data, 0x0001_0000)  // version 1.0
+        appendUInt32(&data, 0x0001_0000)
         appendUInt16(&data, numGlyphs)
         appendUInt16(&data, maxp.maxPoints ?? 0)
         appendUInt16(&data, maxp.maxContours ?? 0)
@@ -424,7 +363,7 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     private func buildCmapTable(characters: Set<Character>, oldToNew: [UInt16: UInt16]) -> [Byte] {
-        // Build character to new glyph ID mapping
+
         var charToGlyph: [(UInt32, UInt16)] = []
 
         for char in characters {
@@ -440,19 +379,15 @@ extension ISO_14496_22.FontSubsetter {
 
         charToGlyph.sort { $0.0 < $1.0 }
 
-        // Build format 4 subtable for BMP characters
         var data = [Byte]()
 
-        // cmap header
-        appendUInt16(&data, 0)  // version
-        appendUInt16(&data, 1)  // numTables
+        appendUInt16(&data, 0)
+        appendUInt16(&data, 1)
 
-        // Encoding record
-        appendUInt16(&data, 3)  // platformID (Windows)
-        appendUInt16(&data, 1)  // encodingID (Unicode BMP)
-        appendUInt32(&data, 12)  // offset to subtable
+        appendUInt16(&data, 3)
+        appendUInt16(&data, 1)
+        appendUInt32(&data, 12)
 
-        // Format 4 subtable
         let format4 = buildCmapFormat4(charToGlyph: charToGlyph)
         data.append(contentsOf: format4)
 
@@ -460,16 +395,13 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     private func buildCmapFormat4(charToGlyph: [(UInt32, UInt16)]) -> [Byte] {
-        // Filter to BMP only and build segments
+
         let bmpMappings = charToGlyph.filter { $0.0 <= 0xFFFF }
 
-        // Helper to compute idDelta using modular arithmetic
-        // idDelta = (glyphID - charCode) mod 65536
         func computeDelta(glyph: UInt16, code: UInt16) -> Int16 {
             Int16(bitPattern: glyph &- code)
         }
 
-        // Build segments - for simplicity, one segment per range
         var segments: [(startCode: UInt16, endCode: UInt16, idDelta: Int16)] = []
 
         if !bmpMappings.isEmpty {
@@ -494,13 +426,11 @@ extension ISO_14496_22.FontSubsetter {
             segments.append((segStart, segEnd, segDelta))
         }
 
-        // Add end segment (required)
         segments.append((0xFFFF, 0xFFFF, 1))
 
         let segCount = UInt16(segments.count)
         let segCountX2 = segCount * 2
 
-        // Calculate header values per OpenType spec
         var power = 1
         var log2Power = 0
         while power * 2 <= Int(segCount) {
@@ -511,42 +441,35 @@ extension ISO_14496_22.FontSubsetter {
         let entrySelector = UInt16(log2Power)
         let rangeShift = segCountX2 - searchRange
 
-        // Calculate table length
-        // format + length + language + segCountX2 + searchRange + entrySelector + rangeShift
         let headerSize = 14
-        let arraySize = Int(segCount) * 2 * 4  // 4 arrays of 2-byte values
+        let arraySize = Int(segCount) * 2 * 4
         let reservedPad = 2
         let length = UInt16(headerSize + arraySize + reservedPad)
 
         var data = [Byte]()
 
-        appendUInt16(&data, 4)  // format
+        appendUInt16(&data, 4)
         appendUInt16(&data, length)
-        appendUInt16(&data, 0)  // language
+        appendUInt16(&data, 0)
         appendUInt16(&data, segCountX2)
         appendUInt16(&data, searchRange)
         appendUInt16(&data, entrySelector)
         appendUInt16(&data, rangeShift)
 
-        // endCode array
         for seg in segments {
             appendUInt16(&data, seg.endCode)
         }
 
-        // reservedPad
         appendUInt16(&data, 0)
 
-        // startCode array
         for seg in segments {
             appendUInt16(&data, seg.startCode)
         }
 
-        // idDelta array
         for seg in segments {
             appendInt16(&data, seg.idDelta)
         }
 
-        // idRangeOffset array (all zeros - we use delta only)
         for _ in segments {
             appendUInt16(&data, 0)
         }
@@ -573,8 +496,7 @@ extension ISO_14496_22.FontSubsetter {
     private func buildPostTable() -> [Byte] {
         var data = [Byte]()
 
-        // Use format 3.0 (no glyph names - saves space)
-        appendUInt32(&data, 0x0003_0000)  // version 3.0
+        appendUInt32(&data, 0x0003_0000)
 
         let post = fontFile.post
         let italicAngle = Int32(post.italicAngle * 65536)
@@ -582,10 +504,10 @@ extension ISO_14496_22.FontSubsetter {
         appendInt16(&data, post.underlinePosition)
         appendInt16(&data, post.underlineThickness)
         appendUInt32(&data, post.isFixedPitch ? 1 : 0)
-        appendUInt32(&data, 0)  // minMemType42
-        appendUInt32(&data, 0)  // maxMemType42
-        appendUInt32(&data, 0)  // minMemType1
-        appendUInt32(&data, 0)  // maxMemType1
+        appendUInt32(&data, 0)
+        appendUInt32(&data, 0)
+        appendUInt32(&data, 0)
+        appendUInt32(&data, 0)
 
         return data
     }
@@ -593,28 +515,24 @@ extension ISO_14496_22.FontSubsetter {
     private func buildNameTable() -> [Byte] {
         var data = [Byte]()
 
-        // Minimal name table with just PostScript name
         let psName = fontFile.postScriptName
         let psNameBytes = psName.utf16.flatMap { $0.bytes(endianness: .big) }
 
-        appendUInt16(&data, 0)  // format
-        appendUInt16(&data, 1)  // count
-        appendUInt16(&data, 18)  // stringOffset (6 + 12 = 18)
+        appendUInt16(&data, 0)
+        appendUInt16(&data, 1)
+        appendUInt16(&data, 18)
 
-        // Name record for PostScript name
-        appendUInt16(&data, 3)  // platformID (Windows)
-        appendUInt16(&data, 1)  // encodingID (Unicode BMP)
-        appendUInt16(&data, 0x0409)  // languageID (English US)
-        appendUInt16(&data, 6)  // nameID (PostScript name)
+        appendUInt16(&data, 3)
+        appendUInt16(&data, 1)
+        appendUInt16(&data, 0x0409)
+        appendUInt16(&data, 6)
         appendUInt16(&data, UInt16(psNameBytes.count))
-        appendUInt16(&data, 0)  // string offset
+        appendUInt16(&data, 0)
 
         data.append(contentsOf: psNameBytes)
 
         return data
     }
-
-    // MARK: - Binary Helpers
 
     private func calculateChecksum(_ data: [Byte]) -> UInt32 {
         var sum: UInt32 = 0

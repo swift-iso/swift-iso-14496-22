@@ -1,32 +1,19 @@
-// FontFile+Parsing.swift
-// Binary parsing for TrueType/OpenType font files
-
 internal import Binary_Endianness_Primitives
 internal import Binary_Primitives_Standard_Library_Integration
 public import Byte_Primitives
 internal import Byte_Primitives_Standard_Library_Integration
 
 extension ISO_14496_22.FontFile {
-    /// Parse a font file from binary data
-    ///
-    /// - Parameter data: Raw font file bytes
-    /// - Throws: `ParsingError` if the data is invalid
-    /// - Returns: Parsed font file
+
     public init(data: [Byte]) throws(ParsingError) {
         self.data = data
 
-        // Parse offset table
         guard data.count >= 12 else {
             throw ParsingError.invalidData("File too small for offset table")
         }
 
         let sfntVersion = readUInt32(data, at: 0)
 
-        // Check for valid sfnt version
-        // 0x00010000 = TrueType
-        // 0x4F54544F = 'OTTO' (OpenType with CFF)
-        // 0x74727565 = 'true' (TrueType on Mac)
-        // 0x74797031 = 'typ1' (old-style PostScript on Mac)
         guard
             sfntVersion == 0x0001_0000 || sfntVersion == 0x4F54_544F || sfntVersion == 0x7472_7565
                 || sfntVersion == 0x7479_7031
@@ -36,7 +23,6 @@ extension ISO_14496_22.FontFile {
 
         let numTables = readUInt16(data, at: 4)
 
-        // Parse table directory
         var tableOffsets: [String: (offset: UInt32, length: UInt32)] = [:]
         var offset = 12
 
@@ -54,7 +40,6 @@ extension ISO_14496_22.FontFile {
             offset += 16
         }
 
-        // Parse required tables
         self.head = try Self.parseHead(data: data, tableOffsets: tableOffsets)
         self.hhea = try Self.parseHhea(data: data, tableOffsets: tableOffsets)
         self.maxp = try Self.parseMaxp(data: data, tableOffsets: tableOffsets)
@@ -68,7 +53,6 @@ extension ISO_14496_22.FontFile {
         self.name = try Self.parseName(data: data, tableOffsets: tableOffsets)
         self.post = try Self.parsePost(data: data, tableOffsets: tableOffsets)
 
-        // Parse optional tables for subsetting (TrueType only, not CFF)
         self.loca = Self.parseLoca(
             data: data,
             tableOffsets: tableOffsets,
@@ -78,15 +62,12 @@ extension ISO_14496_22.FontFile {
         self.glyf = Self.parseGlyf(data: data, tableOffsets: tableOffsets)
     }
 
-    /// Parsing errors
     public enum ParsingError: Swift.Error, Sendable {
         case invalidData(String)
         case missingTable(String)
         case unsupportedFormat(String)
     }
 }
-
-// MARK: - Table Parsing
 
 extension ISO_14496_22.FontFile {
     static func parseHead(
@@ -173,7 +154,7 @@ extension ISO_14496_22.FontFile {
         let numGlyphs = readUInt16(data, at: o + 4)
 
         if version == 0x0001_0000 && o + 32 <= data.count {
-            // TrueType version
+
             return ISO_14496_22.MaxpTable(
                 numGlyphs: numGlyphs,
                 maxPoints: readUInt16(data, at: o + 6),
@@ -191,7 +172,7 @@ extension ISO_14496_22.FontFile {
                 maxComponentDepth: readUInt16(data, at: o + 30)
             )
         } else {
-            // CFF version
+
             return ISO_14496_22.MaxpTable(numGlyphs: numGlyphs)
         }
     }
@@ -209,9 +190,8 @@ extension ISO_14496_22.FontFile {
         let nHMetrics = Int(numberOfHMetrics)
         let nGlyphs = Int(numGlyphs)
 
-        // Each hMetric is 4 bytes (2 for advance width, 2 for lsb)
         let hMetricsSize = nHMetrics * 4
-        // Remaining glyphs have just 2-byte lsb
+
         let lsbCount = nGlyphs - nHMetrics
         let expectedSize = hMetricsSize + (lsbCount > 0 ? lsbCount * 2 : 0)
 
@@ -284,19 +264,17 @@ extension ISO_14496_22.FontFile {
             )
             encodingRecords.append(record)
 
-            // Prioritize Unicode subtables
-            // Priority: Windows Unicode Full > Windows Unicode BMP > Unicode platform
             let priority: Int
             if platformID == 3 && encodingID == 10 {
-                priority = 4  // Windows Unicode full
+                priority = 4
             } else if platformID == 3 && encodingID == 1 {
-                priority = 3  // Windows Unicode BMP
+                priority = 3
             } else if platformID == 0 && encodingID == 4 {
-                priority = 2  // Unicode 2.0 full
+                priority = 2
             } else if platformID == 0 && encodingID == 3 {
-                priority = 1  // Unicode 2.0 BMP
+                priority = 1
             } else if platformID == 0 {
-                priority = 0  // Other Unicode
+                priority = 0
             } else {
                 priority = -1
             }
@@ -307,7 +285,6 @@ extension ISO_14496_22.FontFile {
             }
         }
 
-        // Parse the best Unicode subtable
         var unicodeMapping: [UInt32: UInt16] = [:]
 
         if let subtableOffset = bestSubtableOffset {
@@ -323,7 +300,7 @@ extension ISO_14496_22.FontFile {
                     unicodeMapping = try parseFormat12(data: data, offset: subtableStart)
 
                 default:
-                    // Unsupported format, leave mapping empty
+
                     break
                 }
             }
@@ -336,7 +313,6 @@ extension ISO_14496_22.FontFile {
         )
     }
 
-    /// Parse cmap format 4 (segment mapping to delta values)
     private static func parseFormat4(
         data: [Byte],
         offset: Int
@@ -345,12 +321,12 @@ extension ISO_14496_22.FontFile {
             throw ParsingError.invalidData("cmap format 4 header too small")
         }
 
-        _ = readUInt16(data, at: offset + 2)  // length (unused)
+        _ = readUInt16(data, at: offset + 2)
         let segCountX2 = readUInt16(data, at: offset + 6)
         let segCount = Int(segCountX2 / 2)
 
         let endCodeOffset = offset + 14
-        let startCodeOffset = endCodeOffset + segCount * 2 + 2  // +2 for reservedPad
+        let startCodeOffset = endCodeOffset + segCount * 2 + 2
         let idDeltaOffset = startCodeOffset + segCount * 2
         let idRangeOffsetOffset = idDeltaOffset + segCount * 2
         let glyphIdArrayOffset = idRangeOffsetOffset + segCount * 2
@@ -367,7 +343,7 @@ extension ISO_14496_22.FontFile {
             let idDelta = readInt16(data, at: idDeltaOffset + i * 2)
             let idRangeOffset = readUInt16(data, at: idRangeOffsetOffset + i * 2)
 
-            if startCode == 0xFFFF { break }  // End marker
+            if startCode == 0xFFFF { break }
 
             (startCode...endCode).forEach { code in
                 let glyphIndex: UInt16
@@ -396,7 +372,6 @@ extension ISO_14496_22.FontFile {
         return mapping
     }
 
-    /// Parse cmap format 12 (segmented coverage)
     private static func parseFormat12(
         data: [Byte],
         offset: Int
@@ -474,28 +449,26 @@ extension ISO_14496_22.FontFile {
             )
             nameRecords.append(record)
 
-            // Parse string for Windows Unicode or Mac Roman (English)
             let stringStart = stringDataOffset + Int(offset)
             let stringEnd = stringStart + Int(length)
 
             if stringEnd <= data.count {
                 let stringBytes = Array(data[stringStart..<stringEnd])
 
-                // Prefer Windows Unicode (platform 3, encoding 1) or Unicode (platform 0)
                 let isUnicode = platformID == 3 || platformID == 0
-                // English US or Mac English
+
                 let isEnglish = languageID == 0x0409 || languageID == 0
 
                 if isEnglish && strings[nameID] == nil {
                     if isUnicode {
-                        // UTF-16 BE
+
                         var chars: [UInt16] = []
                         for j in stride(from: 0, to: stringBytes.count - 1, by: 2) {
                             chars.append(UInt16(bytes: stringBytes[j..<j + 2], endianness: .big)!)
                         }
                         strings[nameID] = String(decoding: chars, as: UTF16.self)
                     } else if platformID == 1 {
-                        // Mac Roman - decode as ASCII subset for now
+
                         strings[nameID] = String(decoding: stringBytes, as: UTF8.self)
                     }
                 }
@@ -534,15 +507,10 @@ extension ISO_14496_22.FontFile {
             maxMemType42: readUInt32(data, at: o + 20),
             minMemType1: readUInt32(data, at: o + 24),
             maxMemType1: readUInt32(data, at: o + 28),
-            glyphNames: nil  // TODO: Parse version 2.0 glyph names if needed
+            glyphNames: nil
         )
     }
 
-    /// Parse loca table (optional, TrueType only)
-    ///
-    /// - Parameters:
-    ///   - indexToLocFormat: 0 for short (2-byte), 1 for long (4-byte)
-    ///   - numGlyphs: Number of glyphs from maxp table
     static func parseLoca(
         data: [Byte],
         tableOffsets: [String: (offset: UInt32, length: UInt32)],
@@ -550,25 +518,25 @@ extension ISO_14496_22.FontFile {
         numGlyphs: UInt16
     ) -> ISO_14496_22.LocaTable? {
         guard let table = tableOffsets["loca"] else {
-            return nil  // CFF fonts don't have loca
+            return nil
         }
         let o = Int(table.offset)
-        let numEntries = Int(numGlyphs) + 1  // loca has numGlyphs + 1 entries
+        let numEntries = Int(numGlyphs) + 1
 
         var offsets: [UInt32] = []
         offsets.reserveCapacity(numEntries)
 
         if indexToLocFormat == 0 {
-            // Short format: 2-byte offsets, multiply by 2
+
             let expectedSize = numEntries * 2
             guard o + expectedSize <= data.count else { return nil }
 
             (0..<numEntries).forEach { i in
                 let offset = readUInt16(data, at: o + i * 2)
-                offsets.append(UInt32(offset) * 2)  // Short offsets are halved
+                offsets.append(UInt32(offset) * 2)
             }
         } else {
-            // Long format: 4-byte offsets
+
             let expectedSize = numEntries * 4
             guard o + expectedSize <= data.count else { return nil }
 
@@ -580,13 +548,12 @@ extension ISO_14496_22.FontFile {
         return ISO_14496_22.LocaTable(offsets: offsets)
     }
 
-    /// Parse glyf table (optional, TrueType only)
     static func parseGlyf(
         data: [Byte],
         tableOffsets: [String: (offset: UInt32, length: UInt32)]
     ) -> ISO_14496_22.GlyfTable? {
         guard let table = tableOffsets["glyf"] else {
-            return nil  // CFF fonts don't have glyf
+            return nil
         }
         let o = Int(table.offset)
         let length = Int(table.length)
@@ -599,8 +566,6 @@ extension ISO_14496_22.FontFile {
         )
     }
 }
-
-// MARK: - Binary Reading Helpers
 
 private func readUInt16(_ data: [Byte], at offset: Int) -> UInt16 {
     UInt16(bytes: data[offset..<offset + 2], endianness: .big)!

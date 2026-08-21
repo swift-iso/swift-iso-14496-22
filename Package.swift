@@ -2,8 +2,6 @@
 
 import PackageDescription
 
-// ISO/IEC 14496-22: Open Font Format (OFF)
-// Specifies the structure of TrueType and OpenType font files
 let package = Package(
     name: "swift-iso-14496-22",
     platforms: [
