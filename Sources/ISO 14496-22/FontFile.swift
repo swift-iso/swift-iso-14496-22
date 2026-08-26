@@ -1,4 +1,4 @@
-public import Byte_Primitives
+public import Byte
 
 extension ISO_14496_22 {
 

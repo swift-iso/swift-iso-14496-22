@@ -23,7 +23,7 @@ Parsing a binary font and subsetting it by hand means decoding the offset table,
 
 ```swift
 import ISO_14496_22
-import Byte_Primitives
+import Byte
 
 // Raw TrueType/OpenType file bytes.
 let fontBytes: [Byte] = loadFontBytes()
