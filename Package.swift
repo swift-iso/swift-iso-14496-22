@@ -51,7 +51,7 @@ let package = Package(
         .testTarget(
             name: "ISO 14496-22 Tests",
             dependencies: [
-                "ISO 14496-22",
+                .target(name: "ISO 14496-22"),
                 .product(name: "Byte", package: "swift-byte"),
                 .product(
                     name: "Byte Standard Library Integration",
@@ -62,10 +62,6 @@ let package = Package(
     ],
     swiftLanguageModes: [.v6]
 )
-
-extension String {
-    var tests: Self { self + " Tests" }
-}
 
 for target in package.targets where ![.system, .binary, .plugin, .macro].contains(target.type) {
     let ecosystem: [SwiftSetting] = [
