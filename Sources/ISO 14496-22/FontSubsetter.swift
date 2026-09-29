@@ -115,7 +115,7 @@ extension ISO_14496_22.FontSubsetter {
             newGlyfData.append(contentsOf: glyphData)
 
             if newGlyfData.count % 2 != 0 {
-                newGlyfData.append(0)
+                newGlyfData.append(Byte(bitPattern: 0))
             }
         }
 
@@ -242,10 +242,10 @@ extension ISO_14496_22.FontSubsetter {
 
         for (index, (tag, _)) in tables.enumerated() {
 
-            let tagBytes = tag.utf8.map(Byte.init)
+            let tagBytes = [Byte](utf8: tag)
             output.append(contentsOf: tagBytes)
             for _ in tagBytes.count..<4 {
-                output.append(0x20)
+                output.append(Byte(bitPattern: 0x20))
             }
 
             appendUInt32(&output, tableLocations[index].checksum)
@@ -259,7 +259,7 @@ extension ISO_14496_22.FontSubsetter {
             output.append(contentsOf: data)
 
             while output.count % 4 != 0 {
-                output.append(0)
+                output.append(Byte(bitPattern: 0))
             }
         }
 
@@ -542,7 +542,7 @@ extension ISO_14496_22.FontSubsetter {
             (0..<4).forEach { j in
                 value = value << 8
                 if i + j < data.count {
-                    value |= UInt32(data[i + j])
+                    value |= UInt32(data[i + j].underlying)
                 }
             }
             sum = sum &+ value

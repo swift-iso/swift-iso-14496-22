@@ -3,10 +3,6 @@ import Testing
 
 @testable import ISO_14496_22
 
-#if os(macOS)
-    import Foundation
-#endif
-
 @Suite("FontFile Parsing Tests")
 struct FontFileParsingTests {
 
@@ -19,7 +15,7 @@ struct FontFileParsingTests {
 
     @Test
     func `Rejects data too small for header`() {
-        let smallData: [Byte] = [0, 1, 0, 0]
+        let smallData = [0, 1, 0, 0].map(Byte.init(bitPattern:))
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
             _ = try ISO_14496_22.FontFile(data: smallData)
         }
@@ -28,7 +24,7 @@ struct FontFileParsingTests {
     @Test
     func `Rejects invalid sfnt version`() {
 
-        let invalidData: [Byte] = [0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0]
+        let invalidData = [0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0].map(Byte.init(bitPattern:))
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
             _ = try ISO_14496_22.FontFile(data: invalidData)
         }
@@ -122,182 +118,152 @@ struct CmapTableTests {
     }
 }
 
-#if os(macOS)
-    @Suite("System Font Tests")
-    struct SystemFontTests {
+private enum Fixture {
 
-        @Test
-        func `Parses Geneva.ttf from system fonts`() throws {
-            let path = "/System/Library/Fonts/Geneva.ttf"
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = data.map(Byte.init)
+    static let simple = [0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64, 0x00, 0x64, 0x00, 0x00]
+        .map(Byte.init(bitPattern:))
 
-            let fontFile = try ISO_14496_22.FontFile(data: fontData)
+    static let composite = [
+        0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64, 0x00, 0x64,
+        0x00, 0x22, 0x00, 0x05, 0x00, 0x00,
+        0x00, 0x02, 0x00, 0x07, 0x00, 0x00,
+    ].map(Byte.init(bitPattern:))
 
-            #expect(fontFile.head.unitsPerEm > 0)
-            #expect(fontFile.head.magicNumber == 0x5F0F_3CF5)
-            #expect(fontFile.maxp.numGlyphs > 0)
+    static let glyphs = [simple, simple, simple, simple, simple, simple, composite, simple, simple]
 
-            #expect(!fontFile.postScriptName.isEmpty)
-            print("Font: \(fontFile.postScriptName)")
-            print("Units per em: \(fontFile.head.unitsPerEm)")
-            print("Num glyphs: \(fontFile.maxp.numGlyphs)")
+    static let offsets = glyphs.reduce(into: [UInt32(0)]) { $0.append($0.last! + UInt32($1.count)) }
 
-            #expect(!fontFile.cmap.unicodeMapping.isEmpty)
+    static let mapping: [UInt32: UInt16] = [72: 1, 101: 2, 108: 3, 111: 4, 65: 5, 193: 6, 180: 7, 90: 8]
 
-            if let glyphA = fontFile.cmap.glyphIndex(for: 65) {
-                let widthA = fontFile.hmtx.advanceWidth(for: glyphA)
-                print("Glyph A (index \(glyphA)): width \(widthA)")
-                #expect(widthA > 0)
-            }
-        }
+    static let font = ISO_14496_22.FontFile(
+        data: [],
+        head: ISO_14496_22.HeadTable(),
+        hhea: ISO_14496_22.HheaTable(
+            ascender: 800,
+            descender: -200,
+            lineGap: 0,
+            advanceWidthMax: 580,
+            numberOfHMetrics: 9
+        ),
+        hmtx: ISO_14496_22.HmtxTable(
+            hMetrics: (0..<9).map { ISO_14496_22.LongHorMetric(advanceWidth: 500 + UInt16($0) * 10, leftSideBearing: 0) },
+            leftSideBearings: [],
+            numberOfHMetrics: 9
+        ),
+        maxp: ISO_14496_22.MaxpTable(numGlyphs: 9),
+        cmap: ISO_14496_22.CmapTable(version: 0, encodingRecords: [], unicodeMapping: mapping),
+        name: ISO_14496_22.NameTable(format: 0, nameRecords: [], strings: [.postScriptName: "Fixture-Regular"]),
+        post: ISO_14496_22.PostTable(
+            version: ISO_14496_22.Fixed(integer: 3, fraction: 0),
+            italicAngle: 0,
+            underlinePosition: -100,
+            underlineThickness: 50,
+            isFixedPitch: false
+        ),
+        loca: ISO_14496_22.LocaTable(offsets: offsets),
+        glyf: ISO_14496_22.GlyfTable(data: glyphs.flatMap { $0 }, tableOffset: 0)
+    )
 
-        @Test
-        func `Parses Symbol.ttf from system fonts`() throws {
-            let path = "/System/Library/Fonts/Symbol.ttf"
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = data.map(Byte.init)
+    static func serialized(_ characters: Set<Character>) throws -> [Byte] {
+        try ISO_14496_22.FontSubsetter(fontFile: font).subset(characters: characters)
+    }
 
-            let fontFile = try ISO_14496_22.FontFile(data: fontData)
+    static var characters: Set<Character> {
+        Set(mapping.keys.map { Character(Unicode.Scalar($0)!) })
+    }
+}
 
-            #expect(fontFile.head.unitsPerEm > 0)
-            #expect(!fontFile.postScriptName.isEmpty)
-            print("Font: \(fontFile.postScriptName)")
-        }
+@Suite("Serialized Font Tests")
+struct SerializedFontTests {
 
-        @Test
-        func `Parses loca and glyf tables from Geneva.ttf`() throws {
-            let path = "/System/Library/Fonts/Geneva.ttf"
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = data.map(Byte.init)
+    @Test
+    func `Parses a serialized font`() throws {
+        let fontFile = try ISO_14496_22.FontFile(data: Fixture.serialized(Fixture.characters))
 
-            let fontFile = try ISO_14496_22.FontFile(data: fontData)
+        #expect(fontFile.head.unitsPerEm == 1000)
+        #expect(fontFile.head.magicNumber == 0x5F0F_3CF5)
+        #expect(fontFile.maxp.numGlyphs == 9)
+        #expect(fontFile.postScriptName == "Fixture-Regular")
+        #expect(fontFile.cmap.unicodeMapping == Fixture.mapping)
+        let glyphA = try #require(fontFile.cmap.glyphIndex(for: 65))
+        #expect(fontFile.hmtx.advanceWidth(for: glyphA) == 550)
+    }
 
-            let loca = try #require(fontFile.loca)
-            #expect(loca.offsets.count == Int(fontFile.maxp.numGlyphs) + 1)
-            print("loca table: \(loca.offsets.count) entries")
-
-            let glyf = try #require(fontFile.glyf)
-            #expect(!glyf.data.isEmpty)
-            print("glyf table: \(glyf.data.count) bytes")
-
-            if let glyphA = fontFile.cmap.glyphIndex(for: 65) {
-                if let range = loca.glyphRange(for: glyphA) {
-                    print("Glyph A (index \(glyphA)): offset \(range.start)-\(range.end)")
-                    #expect(range.end >= range.start)
-
-                    if let glyphData = glyf.glyphData(start: range.start, end: range.end) {
-                        print("Glyph A data: \(glyphData.count) bytes")
-                        #expect(!glyphData.isEmpty)
-                    }
-                }
-            }
-
-            if let range = loca.glyphRange(for: 0) {
-                #expect(range.end >= range.start)
-            }
-        }
-
-        @Test
-        func `Detects composite glyphs`() throws {
-            let path = "/System/Library/Fonts/Geneva.ttf"
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = data.map(Byte.init)
-
-            let fontFile = try ISO_14496_22.FontFile(data: fontData)
-            let loca = try #require(fontFile.loca)
-            let glyf = try #require(fontFile.glyf)
-
-            var simpleCount = 0
-            var compositeCount = 0
-            var emptyCount = 0
-
-            for glyphIndex: UInt16 in 0..<min(100, fontFile.maxp.numGlyphs) {
-                guard let range = loca.glyphRange(for: glyphIndex) else { continue }
-
-                if range.start == range.end {
-                    emptyCount += 1
-                } else if glyf.isComposite(start: range.start, end: range.end) {
-                    compositeCount += 1
-
-                    let components = glyf.componentGlyphIDs(start: range.start, end: range.end)
-                    if !components.isEmpty {
-                        print("Glyph \(glyphIndex) is composite with components: \(components)")
-                    }
-                } else {
-                    simpleCount += 1
-                }
-            }
-
-            print(
-                "First 100 glyphs: \(simpleCount) simple, \(compositeCount) composite, \(emptyCount) empty"
-            )
-            #expect(simpleCount > 0)
+    @Test
+    func `Rejects a truncated serialized font`() throws {
+        let truncated = try Array(Fixture.serialized(Fixture.characters).prefix(40))
+        #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
+            _ = try ISO_14496_22.FontFile(data: truncated)
         }
     }
-#endif
+
+    @Test
+    func `Parses loca and glyf tables of a serialized font`() throws {
+        let fontFile = try ISO_14496_22.FontFile(data: Fixture.serialized(Fixture.characters))
+
+        let loca = try #require(fontFile.loca)
+        let glyf = try #require(fontFile.glyf)
+        #expect(loca.offsets == Fixture.offsets)
+        #expect(glyf.data == Fixture.glyphs.flatMap { $0 })
+
+        let range = try #require(loca.glyphRange(for: 5))
+        #expect(glyf.glyphData(start: range.start, end: range.end) == Fixture.simple)
+    }
+
+    @Test
+    func `Detects composite glyphs`() throws {
+        let loca = try #require(Fixture.font.loca)
+        let glyf = try #require(Fixture.font.glyf)
+
+        let composite = (0..<Fixture.font.maxp.numGlyphs).filter { glyphIndex in
+            loca.glyphRange(for: glyphIndex).map { glyf.isComposite(start: $0.start, end: $0.end) } ?? false
+        }
+        #expect(composite == [6])
+
+        let range = try #require(loca.glyphRange(for: 6))
+        #expect(glyf.componentGlyphIDs(start: range.start, end: range.end) == [5, 7])
+    }
+}
 
 @Suite("FontSubsetter Tests")
 struct FontSubsetterTests {
 
-    #if os(macOS)
-        @Test
-        func `Subsets Geneva.ttf to ASCII only`() throws {
-            let path = "/System/Library/Fonts/Geneva.ttf"
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = data.map(Byte.init)
+    @Test
+    func `Subsets the fixture to ASCII only`() throws {
+        let asciiChars = Set((32...126).map { Character(UnicodeScalar($0)!) })
+        let subsetData = try Fixture.serialized(asciiChars)
 
-            let fontFile = try ISO_14496_22.FontFile(data: fontData)
-            let originalSize = fontData.count
+        #expect(try subsetData.count < Fixture.serialized(Fixture.characters).count)
 
-            let asciiChars = Set((32...126).map { Character(UnicodeScalar($0)!) })
-            let subsetter = ISO_14496_22.FontSubsetter(fontFile: fontFile)
-            let subsetData = try subsetter.subset(characters: asciiChars)
+        let subsetFont = try ISO_14496_22.FontFile(data: subsetData)
+        #expect(subsetFont.head.magicNumber == 0x5F0F_3CF5)
+        #expect(subsetFont.maxp.numGlyphs == 7)
+        #expect(subsetFont.cmap.glyphIndex(for: 65) != nil)
+        #expect(subsetFont.cmap.glyphIndex(for: 193) == nil)
+    }
 
-            print("Original size: \(originalSize) bytes")
-            print("Subset size: \(subsetData.count) bytes")
-            print("Reduction: \(100 - (subsetData.count * 100 / originalSize))%")
+    @Test
+    func `Subsets to minimal character set`() throws {
+        let subsetFont = try ISO_14496_22.FontFile(data: Fixture.serialized(["H", "e", "l", "o"]))
 
-            #expect(subsetData.count < originalSize / 2)
+        #expect(subsetFont.maxp.numGlyphs == 5)
+        #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("H").asciiValue!)) != nil)
+        #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("e").asciiValue!)) != nil)
+        #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("l").asciiValue!)) != nil)
+        #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("o").asciiValue!)) != nil)
+    }
 
-            let subsetFont = try ISO_14496_22.FontFile(data: subsetData)
-            #expect(subsetFont.head.magicNumber == 0x5F0F_3CF5)
-            #expect(subsetFont.maxp.numGlyphs > 0)
-            #expect(subsetFont.maxp.numGlyphs < fontFile.maxp.numGlyphs)
+    @Test
+    func `Subsetting keeps and renumbers composite components`() throws {
+        let subsetFont = try ISO_14496_22.FontFile(data: Fixture.serialized(["\u{C1}"]))
 
-            print("Subset has \(subsetFont.maxp.numGlyphs) glyphs (was \(fontFile.maxp.numGlyphs))")
-
-            #expect(subsetFont.cmap.glyphIndex(for: 65) != nil)
-        }
-
-        @Test
-        func `Subsets to minimal character set`() throws {
-            let path = "/System/Library/Fonts/Geneva.ttf"
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let fontData = data.map(Byte.init)
-
-            let fontFile = try ISO_14496_22.FontFile(data: fontData)
-
-            let chars: Set<Character> = ["H", "e", "l", "o"]
-            let subsetter = ISO_14496_22.FontSubsetter(fontFile: fontFile)
-            let subsetData = try subsetter.subset(characters: chars)
-
-            print("Minimal subset size: \(subsetData.count) bytes")
-
-            #expect(subsetData.count < 10000)
-
-            let subsetFont = try ISO_14496_22.FontFile(data: subsetData)
-
-            print("Minimal subset has \(subsetFont.maxp.numGlyphs) glyphs")
-            #expect(subsetFont.maxp.numGlyphs >= 5)
-            #expect(subsetFont.maxp.numGlyphs < 20)
-
-            #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("H").asciiValue!)) != nil)
-            #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("e").asciiValue!)) != nil)
-            #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("l").asciiValue!)) != nil)
-            #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("o").asciiValue!)) != nil)
-        }
-    #endif
+        #expect(subsetFont.maxp.numGlyphs == 4)
+        let loca = try #require(subsetFont.loca)
+        let glyf = try #require(subsetFont.glyf)
+        let glyph = try #require(subsetFont.cmap.glyphIndex(for: 193))
+        let range = try #require(loca.glyphRange(for: glyph))
+        #expect(glyf.componentGlyphIDs(start: range.start, end: range.end) == [1, 3])
+    }
 }
 
 @Suite("Fixed Point Tests")
