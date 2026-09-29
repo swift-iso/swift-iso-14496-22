@@ -20,11 +20,11 @@ let package = Package(
             branch: "main"
         ),
         .package(
-            url: "https://github.com/swift-molecules/swift-binary.git",
+            url: "https://github.com/swift-atoms/swift-binary.git",
             branch: "main"
         ),
         .package(
-            url: "https://github.com/swift-molecules/swift-byte.git",
+            url: "https://github.com/swift-atoms/swift-byte.git",
             branch: "main"
         ),
     ],
@@ -38,12 +38,12 @@ let package = Package(
                 ),
                 .product(name: "Binary", package: "swift-binary"),
                 .product(
-                    name: "Binary Standard Library Integration",
+                    name: "Binary",
                     package: "swift-binary"
                 ),
                 .product(name: "Byte", package: "swift-byte"),
                 .product(
-                    name: "Byte Standard Library Integration",
+                    name: "Byte",
                     package: "swift-byte"
                 ),
             ]
@@ -54,7 +54,7 @@ let package = Package(
                 .target(name: "ISO 14496-22"),
                 .product(name: "Byte", package: "swift-byte"),
                 .product(
-                    name: "Byte Standard Library Integration",
+                    name: "Byte",
                     package: "swift-byte"
                 ),
             ]

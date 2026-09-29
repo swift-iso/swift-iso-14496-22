@@ -1,7 +1,7 @@
-internal import Binary_Endianness
-internal import Binary_Standard_Library_Integration
+internal import Binary
+internal import Binary
 public import Byte
-internal import Byte_Standard_Library_Integration
+internal import Byte
 
 extension ISO_14496_22.FontFile {
 
