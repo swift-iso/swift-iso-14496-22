@@ -1,7 +1,5 @@
 internal import Binary
-internal import Binary
 public import Byte
-internal import Byte
 
 extension ISO_14496_22 {
 
@@ -77,7 +75,7 @@ extension ISO_14496_22 {
             )
         }
 
-        public enum SubsetError: Swift.Error, Sendable {
+        public enum SubsetError: Swift::Error, Sendable {
             case missingTables(String)
             case invalidGlyph(String)
             case buildFailed(String)

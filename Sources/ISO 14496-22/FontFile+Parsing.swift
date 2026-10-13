@@ -1,7 +1,5 @@
 internal import Binary
-internal import Binary
 public import Byte
-internal import Byte
 
 extension ISO_14496_22.FontFile {
 
@@ -62,7 +60,7 @@ extension ISO_14496_22.FontFile {
         self.glyf = Self.parseGlyf(data: data, tableOffsets: tableOffsets)
     }
 
-    public enum ParsingError: Swift.Error, Sendable {
+    public enum ParsingError: Swift::Error, Sendable {
         case invalidData(String)
         case missingTable(String)
         case unsupportedFormat(String)

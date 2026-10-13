@@ -1,7 +1,5 @@
 internal import Binary
-internal import Binary
 public import Byte
-internal import Byte
 
 extension ISO_14496_22 {
 
