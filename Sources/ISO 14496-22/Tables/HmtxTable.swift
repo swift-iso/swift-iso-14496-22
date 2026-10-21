@@ -8,8 +8,7 @@ extension ISO_14496_22 {
 
         public let numberOfHMetrics: UInt16
 
-        public init(hMetrics: [LongHorMetric], leftSideBearings: [Int16], numberOfHMetrics: UInt16)
-        {
+        public init(hMetrics: [LongHorMetric], leftSideBearings: [Int16], numberOfHMetrics: UInt16) {
             self.hMetrics = hMetrics
             self.leftSideBearings = leftSideBearings
             self.numberOfHMetrics = numberOfHMetrics

@@ -139,8 +139,11 @@ extension ISO_14496_22.FontSubsetter {
         var hasMoreComponents = true
 
         while hasMoreComponents && offset + 4 <= data.count {
-            let flags = UInt16(bytes: data[offset..<offset + 2], endianness: .big)!
-            let oldGlyphID = UInt16(bytes: data[offset + 2..<offset + 4], endianness: .big)!
+            guard let flags = UInt16(bytes: data[offset..<offset + 2], endianness: .big),
+                let oldGlyphID = UInt16(bytes: data[offset + 2..<offset + 4], endianness: .big)
+            else {
+                preconditionFailure("A 2-byte slice always decodes")
+            }
 
             if let newGlyphID = oldToNew[oldGlyphID] {
                 data.replaceSubrange(

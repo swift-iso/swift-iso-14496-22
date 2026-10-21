@@ -25,10 +25,14 @@ extension ISO_14496_22 {
         public func isComposite(start: UInt32, end: UInt32) -> Bool {
             let startIndex = Int(start)
             guard startIndex + 2 <= data.count, start < end else { return false }
-            let numberOfContours = Int16(
-                bytes: data[startIndex..<startIndex + 2],
-                endianness: .big
-            )!
+            guard
+                let numberOfContours = Int16(
+                    bytes: data[startIndex..<startIndex + 2],
+                    endianness: .big
+                )
+            else {
+                preconditionFailure("A 2-byte slice always decodes")
+            }
             return numberOfContours < 0
         }
 
@@ -53,8 +57,11 @@ extension ISO_14496_22 {
             var hasMoreComponents = true
 
             while hasMoreComponents && offset + 4 <= data.count {
-                let flags = UInt16(bytes: data[offset..<offset + 2], endianness: .big)!
-                let glyphIndex = UInt16(bytes: data[offset + 2..<offset + 4], endianness: .big)!
+                guard let flags = UInt16(bytes: data[offset..<offset + 2], endianness: .big),
+                    let glyphIndex = UInt16(bytes: data[offset + 2..<offset + 4], endianness: .big)
+                else {
+                    preconditionFailure("A 2-byte slice always decodes")
+                }
 
                 components.append(glyphIndex)
                 offset += 4

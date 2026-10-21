@@ -151,28 +151,26 @@ extension ISO_14496_22.FontFile {
         let version = readUInt32(data, at: o)
         let numGlyphs = readUInt16(data, at: o + 4)
 
-        if version == 0x0001_0000 && o + 32 <= data.count {
-
-            return ISO_14496_22.MaxpTable(
-                numGlyphs: numGlyphs,
-                maxPoints: readUInt16(data, at: o + 6),
-                maxContours: readUInt16(data, at: o + 8),
-                maxCompositePoints: readUInt16(data, at: o + 10),
-                maxCompositeContours: readUInt16(data, at: o + 12),
-                maxZones: readUInt16(data, at: o + 14),
-                maxTwilightPoints: readUInt16(data, at: o + 16),
-                maxStorage: readUInt16(data, at: o + 18),
-                maxFunctionDefs: readUInt16(data, at: o + 20),
-                maxInstructionDefs: readUInt16(data, at: o + 22),
-                maxStackElements: readUInt16(data, at: o + 24),
-                maxSizeOfInstructions: readUInt16(data, at: o + 26),
-                maxComponentElements: readUInt16(data, at: o + 28),
-                maxComponentDepth: readUInt16(data, at: o + 30)
-            )
-        } else {
-
+        guard version == 0x0001_0000 && o + 32 <= data.count else {
             return ISO_14496_22.MaxpTable(numGlyphs: numGlyphs)
         }
+
+        return ISO_14496_22.MaxpTable(
+            numGlyphs: numGlyphs,
+            maxPoints: readUInt16(data, at: o + 6),
+            maxContours: readUInt16(data, at: o + 8),
+            maxCompositePoints: readUInt16(data, at: o + 10),
+            maxCompositeContours: readUInt16(data, at: o + 12),
+            maxZones: readUInt16(data, at: o + 14),
+            maxTwilightPoints: readUInt16(data, at: o + 16),
+            maxStorage: readUInt16(data, at: o + 18),
+            maxFunctionDefs: readUInt16(data, at: o + 20),
+            maxInstructionDefs: readUInt16(data, at: o + 22),
+            maxStackElements: readUInt16(data, at: o + 24),
+            maxSizeOfInstructions: readUInt16(data, at: o + 26),
+            maxComponentElements: readUInt16(data, at: o + 28),
+            maxComponentDepth: readUInt16(data, at: o + 30)
+        )
     }
 
     static func parseHmtx(
@@ -462,7 +460,10 @@ extension ISO_14496_22.FontFile {
 
                         var chars: [UInt16] = []
                         for j in stride(from: 0, to: stringBytes.count - 1, by: 2) {
-                            chars.append(UInt16(bytes: stringBytes[j..<j + 2], endianness: .big)!)
+                            guard let unit = UInt16(bytes: stringBytes[j..<j + 2], endianness: .big) else {
+                                preconditionFailure("A 2-byte slice always decodes")
+                            }
+                            chars.append(unit)
                         }
                         strings[nameID] = String(decoding: chars, as: UTF16.self)
                     } else if platformID == 1 {
@@ -566,21 +567,36 @@ extension ISO_14496_22.FontFile {
 }
 
 private func readUInt16(_ data: [Byte], at offset: Int) -> UInt16 {
-    UInt16(bytes: data[offset..<offset + 2], endianness: .big)!
+    guard let value = UInt16(bytes: data[offset..<offset + 2], endianness: .big) else {
+        preconditionFailure("A 2-byte slice always decodes")
+    }
+    return value
 }
 
 private func readInt16(_ data: [Byte], at offset: Int) -> Int16 {
-    Int16(bytes: data[offset..<offset + 2], endianness: .big)!
+    guard let value = Int16(bytes: data[offset..<offset + 2], endianness: .big) else {
+        preconditionFailure("A 2-byte slice always decodes")
+    }
+    return value
 }
 
 private func readUInt32(_ data: [Byte], at offset: Int) -> UInt32 {
-    UInt32(bytes: data[offset..<offset + 4], endianness: .big)!
+    guard let value = UInt32(bytes: data[offset..<offset + 4], endianness: .big) else {
+        preconditionFailure("A 4-byte slice always decodes")
+    }
+    return value
 }
 
 private func readInt32(_ data: [Byte], at offset: Int) -> Int32 {
-    Int32(bytes: data[offset..<offset + 4], endianness: .big)!
+    guard let value = Int32(bytes: data[offset..<offset + 4], endianness: .big) else {
+        preconditionFailure("A 4-byte slice always decodes")
+    }
+    return value
 }
 
 private func readInt64(_ data: [Byte], at offset: Int) -> Int64 {
-    Int64(bytes: data[offset..<offset + 8], endianness: .big)!
+    guard let value = Int64(bytes: data[offset..<offset + 8], endianness: .big) else {
+        preconditionFailure("A 8-byte slice always decodes")
+    }
+    return value
 }
