@@ -37,15 +37,7 @@ let package = Package(
                     package: "swift-standard-library-extensions"
                 ),
                 .product(name: "Binary", package: "swift-binary"),
-                .product(
-                    name: "Binary",
-                    package: "swift-binary"
-                ),
                 .product(name: "Byte", package: "swift-byte"),
-                .product(
-                    name: "Byte",
-                    package: "swift-byte"
-                ),
             ]
         ),
         .testTarget(
@@ -53,10 +45,6 @@ let package = Package(
             dependencies: [
                 .target(name: "ISO 14496-22"),
                 .product(name: "Byte", package: "swift-byte"),
-                .product(
-                    name: "Byte",
-                    package: "swift-byte"
-                ),
             ]
         ),
     ],
