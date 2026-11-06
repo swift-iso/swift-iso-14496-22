@@ -24,6 +24,8 @@ extension ISO_14496_22 {
 
         public var fullFontName: String? { strings[.fullFontName] }
 
+        // swift-linter:disable:next raw concept
+        // REASON: OpenType name ID 5, free text such as `Version 1.001; ttfautohint`; looked at Version.Semantic and Version.Tools, which refuse it.
         public var version: String? { strings[.version] }
 
         public var postScriptName: String? { strings[.postScriptName] }
