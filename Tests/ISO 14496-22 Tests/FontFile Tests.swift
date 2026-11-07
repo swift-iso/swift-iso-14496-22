@@ -3,8 +3,8 @@ import Testing
 
 @testable import ISO_14496_22
 
-@Suite("FontFile Parsing Tests")
-struct FontFileParsingTests {
+@Suite
+struct `FontFile Parsing Tests` {
 
     @Test
     func `Rejects empty data`() {
@@ -31,8 +31,8 @@ struct FontFileParsingTests {
     }
 }
 
-@Suite("HeadTable Tests")
-struct HeadTableTests {
+@Suite
+struct `HeadTable Tests` {
 
     @Test
     func `Default initialization`() {
@@ -52,8 +52,8 @@ struct HeadTableTests {
     }
 }
 
-@Suite("HmtxTable Tests")
-struct HmtxTableTests {
+@Suite
+struct `HmtxTable Tests` {
 
     @Test
     func `Advance width lookup`() {
@@ -95,8 +95,8 @@ struct HmtxTableTests {
     }
 }
 
-@Suite("CmapTable Tests")
-struct CmapTableTests {
+@Suite
+struct `CmapTable Tests` {
 
     @Test
     func `Glyph index lookup`() {
@@ -173,8 +173,8 @@ private enum Fixture {
     }
 }
 
-@Suite("Serialized Font Tests")
-struct SerializedFontTests {
+@Suite
+struct `Serialized Font Tests` {
 
     @Test
     func `Parses a serialized font`() throws {
@@ -225,8 +225,8 @@ struct SerializedFontTests {
     }
 }
 
-@Suite("FontSubsetter Tests")
-struct FontSubsetterTests {
+@Suite
+struct `FontSubsetter Tests` {
 
     @Test
     func `Subsets the fixture to ASCII only`() throws {
@@ -266,8 +266,8 @@ struct FontSubsetterTests {
     }
 }
 
-@Suite("Fixed Point Tests")
-struct FixedPointTests {
+@Suite
+struct `Fixed Point Tests` {
 
     @Test
     func `Integer value`() {
