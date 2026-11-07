@@ -1,7 +1,5 @@
 extension ISO_14496_22 {
-
     public struct CmapTable: Sendable, Equatable {
-
         public let version: UInt16
 
         public let encodingRecords: [EncodingRecord]
@@ -17,14 +15,9 @@ extension ISO_14496_22 {
             self.encodingRecords = encodingRecords
             self.unicodeMapping = unicodeMapping
         }
-
-        public func glyphIndex(for codePoint: UInt32) -> UInt16? {
-            unicodeMapping[codePoint]
-        }
     }
 
     public struct EncodingRecord: Sendable, Equatable {
-
         public let platformID: PlatformID
 
         public let encodingID: UInt16
@@ -39,7 +32,6 @@ extension ISO_14496_22 {
     }
 
     public enum PlatformID: UInt16, Sendable, Equatable {
-
         case unicode = 0
 
         case macintosh = 1
@@ -52,7 +44,6 @@ extension ISO_14496_22 {
     }
 
     public enum WindowsEncodingID: UInt16, Sendable, Equatable {
-
         case symbol = 0
 
         case unicodeBMP = 1
@@ -71,7 +62,6 @@ extension ISO_14496_22 {
     }
 
     public enum UnicodeEncodingID: UInt16, Sendable, Equatable {
-
         case unicode1_0 = 0
 
         case unicode1_1 = 1
@@ -85,5 +75,11 @@ extension ISO_14496_22 {
         case unicodeVariation = 5
 
         case unicodeFull = 6
+    }
+}
+
+extension ISO_14496_22.CmapTable {
+    public func glyphIndex(for codePoint: UInt32) -> UInt16? {
+        unicodeMapping[codePoint]
     }
 }

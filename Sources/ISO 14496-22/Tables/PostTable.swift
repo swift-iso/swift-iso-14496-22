@@ -1,7 +1,5 @@
 extension ISO_14496_22 {
-
     public struct PostTable: Sendable, Equatable {
-
         public let version: Fixed
 
         public let italicAngle: Double
@@ -45,10 +43,11 @@ extension ISO_14496_22 {
             self.maxMemType1 = maxMemType1
             self.glyphNames = glyphNames
         }
+    }
+}
 
-        public var hasGlyphNames: Bool {
-
-            version.integer == 2 && version.fraction == 0
-        }
+extension ISO_14496_22.PostTable {
+    public var hasGlyphNames: Bool {
+        version.integer == 2 && version.fraction == 0
     }
 }

@@ -1,7 +1,5 @@
 extension ISO_14496_22 {
-
     public struct HmtxTable: Sendable, Equatable {
-
         public let hMetrics: [LongHorMetric]
 
         public let leftSideBearings: [Int16]
@@ -13,34 +11,9 @@ extension ISO_14496_22 {
             self.leftSideBearings = leftSideBearings
             self.numberOfHMetrics = numberOfHMetrics
         }
-
-        public func advanceWidth(for glyphIndex: UInt16) -> UInt16 {
-            let index = Int(glyphIndex)
-            if index < hMetrics.count {
-                return hMetrics[index].advanceWidth
-            } else if !hMetrics.isEmpty {
-
-                return hMetrics[hMetrics.count - 1].advanceWidth
-            }
-            return 0
-        }
-
-        public func leftSideBearing(for glyphIndex: UInt16) -> Int16 {
-            let index = Int(glyphIndex)
-            if index < hMetrics.count {
-                return hMetrics[index].leftSideBearing
-            } else {
-                let lsbIndex = index - hMetrics.count
-                if lsbIndex < leftSideBearings.count {
-                    return leftSideBearings[lsbIndex]
-                }
-            }
-            return 0
-        }
     }
 
     public struct LongHorMetric: Sendable, Equatable {
-
         public let advanceWidth: UInt16
 
         public let leftSideBearing: Int16
@@ -49,5 +22,30 @@ extension ISO_14496_22 {
             self.advanceWidth = advanceWidth
             self.leftSideBearing = leftSideBearing
         }
+    }
+}
+
+extension ISO_14496_22.HmtxTable {
+    public func advanceWidth(for glyphIndex: UInt16) -> UInt16 {
+        let index = Int(glyphIndex)
+        if index < hMetrics.count {
+            return hMetrics[index].advanceWidth
+        } else if !hMetrics.isEmpty {
+            return hMetrics[hMetrics.count - 1].advanceWidth
+        }
+        return 0
+    }
+
+    public func leftSideBearing(for glyphIndex: UInt16) -> Int16 {
+        let index = Int(glyphIndex)
+        if index < hMetrics.count {
+            return hMetrics[index].leftSideBearing
+        } else {
+            let lsbIndex = index - hMetrics.count
+            if lsbIndex < leftSideBearings.count {
+                return leftSideBearings[lsbIndex]
+            }
+        }
+        return 0
     }
 }

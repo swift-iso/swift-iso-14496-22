@@ -1,7 +1,5 @@
 extension ISO_14496_22 {
-
     public struct MaxpTable: Sendable, Equatable {
-
         public let version: UInt32
 
         public let numGlyphs: UInt16
@@ -31,14 +29,6 @@ extension ISO_14496_22 {
         public let maxComponentElements: UInt16?
 
         public let maxComponentDepth: UInt16?
-
-        public var isTrueType: Bool {
-            version == 0x0001_0000
-        }
-
-        public var isCFF: Bool {
-            version == 0x0000_5000
-        }
 
         public init(numGlyphs: UInt16) {
             self.version = 0x0000_5000
@@ -90,5 +80,15 @@ extension ISO_14496_22 {
             self.maxComponentElements = maxComponentElements
             self.maxComponentDepth = maxComponentDepth
         }
+    }
+}
+
+extension ISO_14496_22.MaxpTable {
+    public var isTrueType: Bool {
+        version == 0x0001_0000
+    }
+
+    public var isCFF: Bool {
+        version == 0x0000_5000
     }
 }
