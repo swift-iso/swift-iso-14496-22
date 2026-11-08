@@ -391,7 +391,7 @@ extension ISO_14496_22.FontFile {
             let endCharCode = readUInt32(data, at: groupOffset + 4)
             let startGlyphID = readUInt32(data, at: groupOffset + 8)
 
-            for code in startCharCode...endCharCode {
+            (startCharCode...endCharCode).forEach { code in
                 let glyphIndex = UInt16(truncatingIfNeeded: startGlyphID + (code - startCharCode))
                 if glyphIndex != 0 {
                     mapping[code] = glyphIndex
