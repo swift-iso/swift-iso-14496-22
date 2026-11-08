@@ -261,18 +261,18 @@ extension ISO_14496_22.FontFile {
             encodingRecords.append(record)
 
             let priority: Int
-            if platformID == 3 && encodingID == 10 {
-                priority = 4
+            priority = if platformID == 3 && encodingID == 10 {
+                4
             } else if platformID == 3 && encodingID == 1 {
-                priority = 3
+                3
             } else if platformID == 0 && encodingID == 4 {
-                priority = 2
+                2
             } else if platformID == 0 && encodingID == 3 {
-                priority = 1
+                1
             } else if platformID == 0 {
-                priority = 0
+                0
             } else {
-                priority = -1
+                -1
             }
 
             if priority > bestPriority {
@@ -350,10 +350,10 @@ extension ISO_14496_22.FontFile {
                         idRangeOffsetOffset + i * 2 + Int(idRangeOffset) + Int(code - startCode) * 2
                     if glyphIdOffset + 2 <= data.count {
                         let glyphId = readUInt16(data, at: glyphIdOffset)
-                        if glyphId != 0 {
-                            glyphIndex = UInt16(truncatingIfNeeded: Int(glyphId) + Int(idDelta))
+                        glyphIndex = if glyphId != 0 {
+                            UInt16(truncatingIfNeeded: Int(glyphId) + Int(idDelta))
                         } else {
-                            glyphIndex = 0
+                            0
                         }
                     } else {
                         glyphIndex = 0
