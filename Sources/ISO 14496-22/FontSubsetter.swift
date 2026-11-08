@@ -2,88 +2,89 @@ internal import Binary
 public import Byte
 
 extension ISO_14496_22 {
+
     public struct FontSubsetter: Sendable {
+
         public let fontFile: FontFile
 
         public init(fontFile: FontFile) {
             self.fontFile = fontFile
         }
-    }
-}
 
-extension ISO_14496_22.FontSubsetter {
-    public func subset(characters: Set<Character>) throws(SubsetError) -> [Byte] {
-        guard let loca = fontFile.loca, let glyf = fontFile.glyf else {
-            throw SubsetError.missingTables(
-                "Font missing loca/glyf tables (CFF fonts not supported)"
-            )
-        }
-
-        var requiredGlyphs = Set<UInt16>()
-
-        requiredGlyphs.insert(0)
-
-        for char in characters {
-            for scalar in char.unicodeScalars {
-                if let glyphID = fontFile.cmap.glyphIndex(for: scalar.value) {
-                    requiredGlyphs.insert(glyphID)
-                }
+        public func subset(characters: Set<Character>) throws(SubsetError) -> [Byte] {
+            guard let loca = fontFile.loca, let glyf = fontFile.glyf else {
+                throw SubsetError.missingTables(
+                    "Font missing loca/glyf tables (CFF fonts not supported)"
+                )
             }
-        }
 
-        var processed = Set<UInt16>()
-        var toProcess = Array(requiredGlyphs)
+            var requiredGlyphs = Set<UInt16>()
 
-        while let glyphID = toProcess.popLast() {
-            guard !processed.contains(glyphID) else { continue }
-            processed.insert(glyphID)
+            requiredGlyphs.insert(0)
 
-            if let range = loca.glyphRange(for: glyphID) {
-                let components = glyf.componentGlyphIDs(start: range.start, end: range.end)
-                for component in components {
-                    if !processed.contains(component) {
-                        requiredGlyphs.insert(component)
-                        toProcess.append(component)
+            for char in characters {
+                for scalar in char.unicodeScalars {
+                    if let glyphID = fontFile.cmap.glyphIndex(for: scalar.value) {
+                        requiredGlyphs.insert(glyphID)
                     }
                 }
             }
+
+            var processed = Set<UInt16>()
+            var toProcess = Array(requiredGlyphs)
+
+            while let glyphID = toProcess.popLast() {
+                guard !processed.contains(glyphID) else { continue }
+                processed.insert(glyphID)
+
+                if let range = loca.glyphRange(for: glyphID) {
+                    let components = glyf.componentGlyphIDs(start: range.start, end: range.end)
+                    for component in components {
+                        if !processed.contains(component) {
+                            requiredGlyphs.insert(component)
+                            toProcess.append(component)
+                        }
+                    }
+                }
+            }
+
+            var sortedGlyphs = Array(requiredGlyphs).sorted()
+            if let zeroIndex = sortedGlyphs.firstIndex(of: 0), zeroIndex != 0 {
+                sortedGlyphs.remove(at: zeroIndex)
+                sortedGlyphs.insert(0, at: 0)
+            }
+
+            var oldToNew = [UInt16: UInt16]()
+            for (newIndex, oldIndex) in sortedGlyphs.enumerated() {
+                oldToNew[oldIndex] = UInt16(newIndex)
+            }
+
+            let (newGlyfData, newLocaOffsets) = buildGlyfAndLoca(
+                sortedGlyphs: sortedGlyphs,
+                oldToNew: oldToNew,
+                loca: loca,
+                glyf: glyf
+            )
+
+            return buildSubsetFont(
+                sortedGlyphs: sortedGlyphs,
+                oldToNew: oldToNew,
+                newGlyfData: newGlyfData,
+                newLocaOffsets: newLocaOffsets,
+                characters: characters
+            )
         }
 
-        var sortedGlyphs = Array(requiredGlyphs).sorted()
-        if let zeroIndex = sortedGlyphs.firstIndex(of: 0), zeroIndex != 0 {
-            sortedGlyphs.remove(at: zeroIndex)
-            sortedGlyphs.insert(0, at: 0)
+        public enum SubsetError: Swift::Error, Sendable {
+            case missingTables(String)
+            case invalidGlyph(String)
+            case buildFailed(String)
         }
-
-        var oldToNew = [UInt16: UInt16]()
-        for (newIndex, oldIndex) in sortedGlyphs.enumerated() {
-            oldToNew[oldIndex] = UInt16(newIndex)
-        }
-
-        let (newGlyfData, newLocaOffsets) = buildGlyfAndLoca(
-            sortedGlyphs: sortedGlyphs,
-            oldToNew: oldToNew,
-            loca: loca,
-            glyf: glyf
-        )
-
-        return buildSubsetFont(
-            sortedGlyphs: sortedGlyphs,
-            oldToNew: oldToNew,
-            newGlyfData: newGlyfData,
-            newLocaOffsets: newLocaOffsets,
-            characters: characters
-        )
-    }
-
-    public enum SubsetError: Swift::Error, Sendable {
-        case missingTables(String)
-        case invalidGlyph(String)
-        case buildFailed(String)
     }
 }
 
 extension ISO_14496_22.FontSubsetter {
+
     private func buildGlyfAndLoca(
         sortedGlyphs: [UInt16],
         oldToNew: [UInt16: UInt16],
@@ -94,6 +95,7 @@ extension ISO_14496_22.FontSubsetter {
         var newLocaOffsets = [UInt32]()
 
         for oldGlyphID in sortedGlyphs {
+
             newLocaOffsets.append(UInt32(newGlyfData.count))
 
             guard let range = loca.glyphRange(for: oldGlyphID) else {
@@ -121,6 +123,7 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     private func remapCompositeGlyph(_ data: inout [Byte], oldToNew: [UInt16: UInt16]) {
+
         var offset = 10
 
         let ARG_1_AND_2_ARE_WORDS: UInt16 = 0x0001
@@ -239,6 +242,7 @@ extension ISO_14496_22.FontSubsetter {
         }
 
         for (index, (tag, _)) in tables.enumerated() {
+
             let tagBytes = [Byte](utf8: tag)
             output.append(contentsOf: tagBytes)
             for _ in tagBytes.count..<4 {
@@ -360,6 +364,7 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     private func buildCmapTable(characters: Set<Character>, oldToNew: [UInt16: UInt16]) -> [Byte] {
+
         var charToGlyph: [(UInt32, UInt16)] = []
 
         for char in characters {
@@ -391,6 +396,7 @@ extension ISO_14496_22.FontSubsetter {
     }
 
     private func buildCmapFormat4(charToGlyph: [(UInt32, UInt16)]) -> [Byte] {
+
         let bmpMappings = charToGlyph.filter { $0.0 <= 0xFFFF }
 
         func computeDelta(glyph: UInt16, code: UInt16) -> Int16 {
