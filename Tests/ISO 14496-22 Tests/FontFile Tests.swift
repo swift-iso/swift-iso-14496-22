@@ -3,7 +3,7 @@ import Testing
 
 @testable import ISO_14496_22
 
-@Suite("FontFile Parsing Tests")
+@Suite
 struct FontFileParsingTests {
 
     @Test
@@ -31,7 +31,7 @@ struct FontFileParsingTests {
     }
 }
 
-@Suite("HeadTable Tests")
+@Suite
 struct HeadTableTests {
 
     @Test
@@ -52,7 +52,7 @@ struct HeadTableTests {
     }
 }
 
-@Suite("HmtxTable Tests")
+@Suite
 struct HmtxTableTests {
 
     @Test
@@ -95,7 +95,7 @@ struct HmtxTableTests {
     }
 }
 
-@Suite("CmapTable Tests")
+@Suite
 struct CmapTableTests {
 
     @Test
@@ -173,7 +173,7 @@ private enum Fixture {
     }
 }
 
-@Suite("Serialized Font Tests")
+@Suite
 struct SerializedFontTests {
 
     @Test
@@ -225,7 +225,7 @@ struct SerializedFontTests {
     }
 }
 
-@Suite("FontSubsetter Tests")
+@Suite
 struct FontSubsetterTests {
 
     @Test
@@ -266,7 +266,7 @@ struct FontSubsetterTests {
     }
 }
 
-@Suite("Fixed Point Tests")
+@Suite
 struct FixedPointTests {
 
     @Test
