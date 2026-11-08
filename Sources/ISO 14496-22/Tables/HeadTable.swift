@@ -81,7 +81,66 @@ extension ISO_14496_22 {
 }
 
 extension ISO_14496_22 {
+
+    public struct Fixed: Sendable, Equatable {
+        public let integer: Int16
+        public let fraction: UInt16
+
+        public init(integer: Int16, fraction: UInt16) {
+            self.integer = integer
+            self.fraction = fraction
+        }
+
+        public init(rawValue: Int32) {
+            self.integer = Int16(truncatingIfNeeded: rawValue >> 16)
+            self.fraction = UInt16(truncatingIfNeeded: rawValue & 0xFFFF)
+        }
+
+        public var doubleValue: Double {
+            Double(integer) + Double(fraction) / 65536.0
+        }
+    }
 }
 
 extension ISO_14496_22.HeadTable {
+
+    public struct Flags: OptionSet, Sendable, Equatable {
+        public let rawValue: UInt16
+
+        public init(rawValue: UInt16) {
+            self.rawValue = rawValue
+        }
+
+        public static let baselineAtY0 = Flags(rawValue: 1 << 0)
+
+        public static let leftSidebearingAtX0 = Flags(rawValue: 1 << 1)
+
+        public static let instructionsDependOnPointSize = Flags(rawValue: 1 << 2)
+
+        public static let forcePPEMToInteger = Flags(rawValue: 1 << 3)
+
+        public static let instructionsMayAlterAdvanceWidth = Flags(rawValue: 1 << 4)
+    }
+
+    public struct MacStyle: OptionSet, Sendable, Equatable {
+        public let rawValue: UInt16
+
+        public init(rawValue: UInt16) {
+            self.rawValue = rawValue
+        }
+
+        public static let bold = MacStyle(rawValue: 1 << 0)
+
+        public static let italic = MacStyle(rawValue: 1 << 1)
+
+        public static let underline = MacStyle(rawValue: 1 << 2)
+
+        public static let outline = MacStyle(rawValue: 1 << 3)
+
+        public static let shadow = MacStyle(rawValue: 1 << 4)
+
+        public static let condensed = MacStyle(rawValue: 1 << 5)
+
+        public static let extended = MacStyle(rawValue: 1 << 6)
+    }
 }
