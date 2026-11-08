@@ -17,65 +17,9 @@ extension ISO_14496_22 {
         }
     }
 
-    public struct EncodingRecord: Sendable, Equatable {
-        public let platformID: PlatformID
 
-        public let encodingID: UInt16
 
-        public let subtableOffset: UInt32
 
-        public init(platformID: PlatformID, encodingID: UInt16, subtableOffset: UInt32) {
-            self.platformID = platformID
-            self.encodingID = encodingID
-            self.subtableOffset = subtableOffset
-        }
-    }
-
-    public enum PlatformID: UInt16, Sendable, Equatable {
-        case unicode = 0
-
-        case macintosh = 1
-
-        case iso = 2
-
-        case windows = 3
-
-        case custom = 4
-    }
-
-    public enum WindowsEncodingID: UInt16, Sendable, Equatable {
-        case symbol = 0
-
-        case unicodeBMP = 1
-
-        case shiftJIS = 2
-
-        case prc = 3
-
-        case big5 = 4
-
-        case wansung = 5
-
-        case johab = 6
-
-        case unicodeFull = 10
-    }
-
-    public enum UnicodeEncodingID: UInt16, Sendable, Equatable {
-        case unicode1_0 = 0
-
-        case unicode1_1 = 1
-
-        case iso10646 = 2
-
-        case unicode2_0_BMP = 3
-
-        case unicode2_0_Full = 4
-
-        case unicodeVariation = 5
-
-        case unicodeFull = 6
-    }
 }
 
 extension ISO_14496_22.CmapTable {
