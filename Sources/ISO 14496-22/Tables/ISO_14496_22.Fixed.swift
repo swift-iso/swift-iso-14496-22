@@ -13,9 +13,11 @@ extension ISO_14496_22 {
             self.integer = Int16(truncatingIfNeeded: rawValue >> 16)
             self.fraction = UInt16(truncatingIfNeeded: rawValue & 0xFFFF)
         }
+    }
+}
 
-        public var doubleValue: Double {
-            Double(integer) + Double(fraction) / 65536.0
-        }
+extension ISO_14496_22.Fixed {
+    public var doubleValue: Double {
+        Double(integer) + Double(fraction) / 65536.0
     }
 }
