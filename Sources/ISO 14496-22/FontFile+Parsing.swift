@@ -261,19 +261,20 @@ extension ISO_14496_22.FontFile {
             encodingRecords.append(record)
 
             let priority: Int
-            priority = if platformID == 3 && encodingID == 10 {
-                4
-            } else if platformID == 3 && encodingID == 1 {
-                3
-            } else if platformID == 0 && encodingID == 4 {
-                2
-            } else if platformID == 0 && encodingID == 3 {
-                1
-            } else if platformID == 0 {
-                0
-            } else {
-                -1
-            }
+            priority =
+                if platformID == 3 && encodingID == 10 {
+                    4
+                } else if platformID == 3 && encodingID == 1 {
+                    3
+                } else if platformID == 0 && encodingID == 4 {
+                    2
+                } else if platformID == 0 && encodingID == 3 {
+                    1
+                } else if platformID == 0 {
+                    0
+                } else {
+                    -1
+                }
 
             if priority > bestPriority {
                 bestPriority = priority
@@ -350,11 +351,12 @@ extension ISO_14496_22.FontFile {
                         idRangeOffsetOffset + i * 2 + Int(idRangeOffset) + Int(code - startCode) * 2
                     if glyphIdOffset + 2 <= data.count {
                         let glyphId = readUInt16(data, at: glyphIdOffset)
-                        glyphIndex = if glyphId != 0 {
-                            UInt16(truncatingIfNeeded: Int(glyphId) + Int(idDelta))
-                        } else {
-                            0
-                        }
+                        glyphIndex =
+                            if glyphId != 0 {
+                                UInt16(truncatingIfNeeded: Int(glyphId) + Int(idDelta))
+                            } else {
+                                0
+                            }
                     } else {
                         glyphIndex = 0
                     }
