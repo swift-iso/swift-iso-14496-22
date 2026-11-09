@@ -32,6 +32,25 @@ struct FontFileParsingTests {
 }
 
 @Suite
+struct NameTableTests {
+
+    @Test
+    func `Decodes Macintosh name records as Mac Roman`() throws {
+        let string: [UInt8] = [0x43, 0x61, 0x66, 0x8E, 0x20, 0xA5, 0x20, 0xDB]
+        let header: [UInt8] = [0x00, 0x00, 0x00, 0x01, 0x00, 0x12]
+        let record: [UInt8] = [0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, UInt8(string.count), 0x00, 0x00]
+        let data = (header + record + string).map(Byte.init(bitPattern:))
+
+        let name = try ISO_14496_22.FontFile.parseName(
+            data: data,
+            tableOffsets: ["name": (offset: 0, length: UInt32(data.count))]
+        )
+
+        #expect(name.strings[.fullFontName] == "Caf\u{E9} \u{2022} \u{20AC}")
+    }
+}
+
+@Suite
 struct HeadTableTests {
 
     @Test
