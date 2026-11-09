@@ -264,6 +264,15 @@ extension ISO_14496_22.FontSubsetter {
             }
         }
 
+        if let headIndex = tables.firstIndex(where: { $0.tag == "head" }) {
+            let adjustmentOffset = Int(tableLocations[headIndex].offset) + 8
+            let adjustment = UInt32(0xB1B0_AFBA) &- calculateChecksum(output)
+            output.replaceSubrange(
+                adjustmentOffset..<adjustmentOffset + 4,
+                with: adjustment.bytes(endianness: .big)
+            )
+        }
+
         return output
     }
 

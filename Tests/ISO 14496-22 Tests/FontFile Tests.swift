@@ -258,6 +258,20 @@ struct FontSubsetterTests {
     }
 
     @Test
+    func `Subset font checksum adjustment balances the whole font`() throws {
+        let subsetData = try Fixture.serialized(Fixture.characters)
+        let subsetFont = try ISO_14496_22.FontFile(data: subsetData)
+
+        let padded = subsetData + Array(repeating: Byte(bitPattern: 0), count: (4 - subsetData.count % 4) % 4)
+        let sum = stride(from: 0, to: padded.count, by: 4).reduce(UInt32(0)) { sum, index in
+            sum &+ padded[index..<index + 4].reduce(UInt32(0)) { $0 << 8 | UInt32($1.underlying) }
+        }
+
+        #expect(subsetFont.head.checksumAdjustment != 0)
+        #expect(sum == 0xB1B0_AFBA)
+    }
+
+    @Test
     func `Subsetting keeps mappings above the BMP`() throws {
         let mapping: [UInt32: UInt16] = [65: 5, 0x1F600: 2, 0x1F601: 3, 0x1F680: 8]
         let font = Fixture.font(mapping: mapping)
