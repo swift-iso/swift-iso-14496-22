@@ -4,7 +4,7 @@ import Testing
 @testable import ISO_14496_22
 
 @Suite
-struct FontFileParsingTests {
+struct `Parsing Tests` {
 
     @Test
     func `Rejects empty data`() {
@@ -32,7 +32,7 @@ struct FontFileParsingTests {
 }
 
 @Suite
-struct NameTableTests {
+struct `Name Tests` {
 
     @Test
     func `Decodes Macintosh name records as Mac Roman`() throws {
@@ -51,7 +51,7 @@ struct NameTableTests {
 }
 
 @Suite
-struct HeadTableTests {
+struct `Head Tests` {
 
     @Test
     func `Default initialization`() {
@@ -72,7 +72,7 @@ struct HeadTableTests {
 }
 
 @Suite
-struct HmtxTableTests {
+struct `Hmtx Tests` {
 
     @Test
     func `Advance width lookup`() {
@@ -115,7 +115,7 @@ struct HmtxTableTests {
 }
 
 @Suite
-struct CmapTableTests {
+struct `Cmap Tests` {
 
     @Test
     func `Glyph index lookup`() {
@@ -148,7 +148,7 @@ struct CmapTableTests {
     @Test
     func `Rejects an unsupported cmap format`() {
         let subtable: [UInt8] = [0x00, 0x02, 0x00, 0x06, 0x00, 0x00]
-        do {
+        do throws(ISO_14496_22.FontFile.ParsingError) {
             let table = try cmap(platformID: 3, encodingID: 1, subtable: subtable)
             Issue.record("Parsed an unsupported format as \(table.unicodeMapping)")
         } catch {
@@ -241,7 +241,7 @@ private enum Fixture {
 }
 
 @Suite
-struct SerializedFontTests {
+struct `Serialization Tests` {
 
     @Test
     func `Parses a serialized font`() throws {
@@ -293,7 +293,7 @@ struct SerializedFontTests {
 }
 
 @Suite
-struct FontSubsetterTests {
+struct `Subsetter Tests` {
 
     @Test
     func `Subsets the fixture to ASCII only`() throws {
@@ -362,7 +362,7 @@ struct FontSubsetterTests {
 }
 
 @Suite
-struct FixedPointTests {
+struct `Fixed Tests` {
 
     @Test
     func `Integer value`() {
