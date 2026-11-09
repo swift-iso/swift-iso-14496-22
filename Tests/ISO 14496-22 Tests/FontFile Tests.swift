@@ -135,6 +135,50 @@ struct CmapTableTests {
         #expect(table.glyphIndex(for: 67) == 3)
         #expect(table.glyphIndex(for: 68) == nil)
     }
+
+    private func cmap(platformID: UInt8, encodingID: UInt8, subtable: [UInt8]) throws(ISO_14496_22.FontFile.ParsingError) -> ISO_14496_22.CmapTable {
+        let header: [UInt8] = [0x00, 0x00, 0x00, 0x01, 0x00, platformID, 0x00, encodingID, 0x00, 0x00, 0x00, 0x0C]
+        let data = (header + subtable).map(Byte.init(bitPattern:))
+        return try ISO_14496_22.FontFile.parseCmap(
+            data: data,
+            tableOffsets: ["cmap": (offset: 0, length: UInt32(data.count))]
+        )
+    }
+
+    @Test
+    func `Rejects an unsupported cmap format`() {
+        let subtable: [UInt8] = [0x00, 0x02, 0x00, 0x06, 0x00, 0x00]
+        do {
+            let table = try cmap(platformID: 3, encodingID: 1, subtable: subtable)
+            Issue.record("Parsed an unsupported format as \(table.unicodeMapping)")
+        } catch {
+            guard case .unsupportedFormat = error else {
+                Issue.record("Unexpected error \(error)")
+                return
+            }
+        }
+    }
+
+    @Test
+    func `Parses a format 6 cmap`() throws {
+        let subtable: [UInt8] = [0x00, 0x06, 0x00, 0x10, 0x00, 0x00, 0x00, 0x41, 0x00, 0x03, 0x00, 0x05, 0x00, 0x00, 0x00, 0x07]
+        let table = try cmap(platformID: 0, encodingID: 3, subtable: subtable)
+        #expect(table.unicodeMapping == [0x41: 5, 0x43: 7])
+    }
+
+    @Test
+    func `Parses a format 0 cmap`() throws {
+        let subtable: [UInt8] = [0x00, 0x00, 0x01, 0x06, 0x00, 0x00] + (0..<256).map { $0 == 0x41 ? 9 : 0 }
+        let table = try cmap(platformID: 3, encodingID: 1, subtable: subtable)
+        #expect(table.unicodeMapping == [0x41: 9])
+    }
+
+    @Test
+    func `Ignores a variation sequence subtable as a mapping`() throws {
+        let subtable: [UInt8] = [0x00, 0x0E, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00]
+        let table = try cmap(platformID: 0, encodingID: 5, subtable: subtable)
+        #expect(table.unicodeMapping.isEmpty)
+    }
 }
 
 private enum Fixture {

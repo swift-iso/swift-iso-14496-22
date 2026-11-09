@@ -270,7 +270,7 @@ extension ISO_14496_22.FontFile {
                     2
                 } else if platformID == 0 && encodingID == 3 {
                     1
-                } else if platformID == 0 {
+                } else if platformID == 0 && encodingID != 5 {
                     0
                 } else {
                     -1
@@ -286,20 +286,26 @@ extension ISO_14496_22.FontFile {
 
         if let subtableOffset = bestSubtableOffset {
             let subtableStart = o + Int(subtableOffset)
-            if subtableStart + 2 <= data.count {
-                let format = readUInt16(data, at: subtableStart)
+            guard subtableStart + 2 <= data.count else {
+                throw ParsingError.invalidData("cmap subtable extends beyond file")
+            }
+            let format = readUInt16(data, at: subtableStart)
 
-                switch format {
-                case 4:
-                    unicodeMapping = try parseFormat4(data: data, offset: subtableStart)
+            switch format {
+            case 0:
+                unicodeMapping = try parseFormat0(data: data, offset: subtableStart)
 
-                case 12:
-                    unicodeMapping = try parseFormat12(data: data, offset: subtableStart)
+            case 4:
+                unicodeMapping = try parseFormat4(data: data, offset: subtableStart)
 
-                default:
+            case 6:
+                unicodeMapping = try parseFormat6(data: data, offset: subtableStart)
 
-                    break
-                }
+            case 12:
+                unicodeMapping = try parseFormat12(data: data, offset: subtableStart)
+
+            default:
+                throw ParsingError.unsupportedFormat("cmap format \(format)")
             }
         }
 
@@ -308,6 +314,56 @@ extension ISO_14496_22.FontFile {
             encodingRecords: encodingRecords,
             unicodeMapping: unicodeMapping
         )
+    }
+
+    private static func parseFormat0(
+        data: [Byte],
+        offset: Int
+    ) throws(ParsingError) -> [UInt32: UInt16] {
+        guard offset + 6 + 256 <= data.count else {
+            throw ParsingError.invalidData("cmap format 0 extends beyond table")
+        }
+
+        var mapping: [UInt32: UInt16] = [:]
+
+        (0..<256).forEach { code in
+            let glyphIndex = UInt16(data[offset + 6 + code].underlying)
+            if glyphIndex != 0 {
+                mapping[UInt32(code)] = glyphIndex
+            }
+        }
+
+        return mapping
+    }
+
+    private static func parseFormat6(
+        data: [Byte],
+        offset: Int
+    ) throws(ParsingError) -> [UInt32: UInt16] {
+        guard offset + 10 <= data.count else {
+            throw ParsingError.invalidData("cmap format 6 header too small")
+        }
+
+        let firstCode = readUInt16(data, at: offset + 6)
+        let entryCount = Int(readUInt16(data, at: offset + 8))
+        let glyphIdArrayOffset = offset + 10
+
+        guard glyphIdArrayOffset + entryCount * 2 <= data.count,
+            Int(firstCode) + entryCount <= 0x10000
+        else {
+            throw ParsingError.invalidData("cmap format 6 extends beyond table")
+        }
+
+        var mapping: [UInt32: UInt16] = [:]
+
+        (0..<entryCount).forEach { i in
+            let glyphIndex = readUInt16(data, at: glyphIdArrayOffset + i * 2)
+            if glyphIndex != 0 {
+                mapping[UInt32(firstCode) + UInt32(i)] = glyphIndex
+            }
+        }
+
+        return mapping
     }
 
     private static func parseFormat4(
