@@ -365,7 +365,7 @@ extension ISO_14496_22.FontSubsetter {
 
     private func buildCmapTable(characters: Set<Character>, oldToNew: [UInt16: UInt16]) -> [Byte] {
 
-        var charToGlyph: [(UInt32, UInt16)] = []
+        var glyphByCodePoint: [UInt32: UInt16] = [:]
 
         for char in characters {
             for scalar in char.unicodeScalars {
@@ -373,24 +373,68 @@ extension ISO_14496_22.FontSubsetter {
                 if let oldGlyph = fontFile.cmap.glyphIndex(for: codePoint),
                     let newGlyph = oldToNew[oldGlyph]
                 {
-                    charToGlyph.append((codePoint, newGlyph))
+                    glyphByCodePoint[codePoint] = newGlyph
                 }
             }
         }
 
-        charToGlyph.sort { $0.0 < $1.0 }
+        let charToGlyph = glyphByCodePoint.map { ($0.key, $0.value) }.sorted { $0.0 < $1.0 }
+
+        let format4 = buildCmapFormat4(charToGlyph: charToGlyph)
+        let needsFormat12 = charToGlyph.contains { $0.0 > 0xFFFF }
 
         var data = [Byte]()
 
         appendUInt16(&data, 0)
-        appendUInt16(&data, 1)
+        appendUInt16(&data, needsFormat12 ? 2 : 1)
 
+        let format4Offset: UInt32 = needsFormat12 ? 20 : 12
         appendUInt16(&data, 3)
         appendUInt16(&data, 1)
-        appendUInt32(&data, 12)
+        appendUInt32(&data, format4Offset)
 
-        let format4 = buildCmapFormat4(charToGlyph: charToGlyph)
+        if needsFormat12 {
+            appendUInt16(&data, 3)
+            appendUInt16(&data, 10)
+            appendUInt32(&data, format4Offset + UInt32(format4.count))
+        }
+
         data.append(contentsOf: format4)
+
+        if needsFormat12 {
+            data.append(contentsOf: buildCmapFormat12(charToGlyph: charToGlyph))
+        }
+
+        return data
+    }
+
+    private func buildCmapFormat12(charToGlyph: [(UInt32, UInt16)]) -> [Byte] {
+        var groups: [(startCode: UInt32, endCode: UInt32, startGlyph: UInt32)] = []
+
+        for (code, glyph) in charToGlyph {
+            if let last = groups.last,
+                code == last.endCode + 1,
+                UInt32(glyph) == last.startGlyph + (code - last.startCode)
+            {
+                groups[groups.count - 1].endCode = code
+            } else {
+                groups.append((code, code, UInt32(glyph)))
+            }
+        }
+
+        var data = [Byte]()
+
+        appendUInt16(&data, 12)
+        appendUInt16(&data, 0)
+        appendUInt32(&data, UInt32(16 + groups.count * 12))
+        appendUInt32(&data, 0)
+        appendUInt32(&data, UInt32(groups.count))
+
+        for group in groups {
+            appendUInt32(&data, group.startCode)
+            appendUInt32(&data, group.endCode)
+            appendUInt32(&data, group.startGlyph)
+        }
 
         return data
     }

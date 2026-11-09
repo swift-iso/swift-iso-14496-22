@@ -135,34 +135,38 @@ private enum Fixture {
 
     static let mapping: [UInt32: UInt16] = [72: 1, 101: 2, 108: 3, 111: 4, 65: 5, 193: 6, 180: 7, 90: 8]
 
-    static let font = ISO_14496_22.FontFile(
-        data: [],
-        head: ISO_14496_22.HeadTable(),
-        hhea: ISO_14496_22.HheaTable(
-            ascender: 800,
-            descender: -200,
-            lineGap: 0,
-            advanceWidthMax: 580,
-            numberOfHMetrics: 9
-        ),
-        hmtx: ISO_14496_22.HmtxTable(
-            hMetrics: (0..<9).map { ISO_14496_22.LongHorMetric(advanceWidth: 500 + UInt16($0) * 10, leftSideBearing: 0) },
-            leftSideBearings: [],
-            numberOfHMetrics: 9
-        ),
-        maxp: ISO_14496_22.MaxpTable(numGlyphs: 9),
-        cmap: ISO_14496_22.CmapTable(version: 0, encodingRecords: [], unicodeMapping: mapping),
-        name: ISO_14496_22.NameTable(format: 0, nameRecords: [], strings: [.postScriptName: "Fixture-Regular"]),
-        post: ISO_14496_22.PostTable(
-            version: ISO_14496_22.Fixed(integer: 3, fraction: 0),
-            italicAngle: 0,
-            underlinePosition: -100,
-            underlineThickness: 50,
-            isFixedPitch: false
-        ),
-        loca: ISO_14496_22.LocaTable(offsets: offsets),
-        glyf: ISO_14496_22.GlyfTable(data: glyphs.flatMap { $0 }, tableOffset: 0)
-    )
+    static let font = font(mapping: mapping)
+
+    static func font(mapping: [UInt32: UInt16]) -> ISO_14496_22.FontFile {
+        ISO_14496_22.FontFile(
+            data: [],
+            head: ISO_14496_22.HeadTable(),
+            hhea: ISO_14496_22.HheaTable(
+                ascender: 800,
+                descender: -200,
+                lineGap: 0,
+                advanceWidthMax: 580,
+                numberOfHMetrics: 9
+            ),
+            hmtx: ISO_14496_22.HmtxTable(
+                hMetrics: (0..<9).map { ISO_14496_22.LongHorMetric(advanceWidth: 500 + UInt16($0) * 10, leftSideBearing: 0) },
+                leftSideBearings: [],
+                numberOfHMetrics: 9
+            ),
+            maxp: ISO_14496_22.MaxpTable(numGlyphs: 9),
+            cmap: ISO_14496_22.CmapTable(version: 0, encodingRecords: [], unicodeMapping: mapping),
+            name: ISO_14496_22.NameTable(format: 0, nameRecords: [], strings: [.postScriptName: "Fixture-Regular"]),
+            post: ISO_14496_22.PostTable(
+                version: ISO_14496_22.Fixed(integer: 3, fraction: 0),
+                italicAngle: 0,
+                underlinePosition: -100,
+                underlineThickness: 50,
+                isFixedPitch: false
+            ),
+            loca: ISO_14496_22.LocaTable(offsets: offsets),
+            glyf: ISO_14496_22.GlyfTable(data: glyphs.flatMap { $0 }, tableOffset: 0)
+        )
+    }
 
     static func serialized(_ characters: Set<Character>) throws -> [Byte] {
         try ISO_14496_22.FontSubsetter(fontFile: font).subset(characters: characters)
@@ -251,6 +255,20 @@ struct FontSubsetterTests {
         #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("e").asciiValue!)) != nil)
         #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("l").asciiValue!)) != nil)
         #expect(subsetFont.cmap.glyphIndex(for: UInt32(Character("o").asciiValue!)) != nil)
+    }
+
+    @Test
+    func `Subsetting keeps mappings above the BMP`() throws {
+        let mapping: [UInt32: UInt16] = [65: 5, 0x1F600: 2, 0x1F601: 3, 0x1F680: 8]
+        let font = Fixture.font(mapping: mapping)
+        let characters: Set<Character> = ["A", "\u{1F600}", "\u{1F601}", "\u{1F680}"]
+        let subsetFont = try ISO_14496_22.FontFile(
+            data: ISO_14496_22.FontSubsetter(fontFile: font).subset(characters: characters)
+        )
+
+        #expect(subsetFont.maxp.numGlyphs == 5)
+        #expect(subsetFont.cmap.unicodeMapping == [65: 3, 0x1F600: 1, 0x1F601: 2, 0x1F680: 4])
+        #expect(subsetFont.cmap.encodingRecords.map(\.encodingID) == [1, 10])
     }
 
     @Test
