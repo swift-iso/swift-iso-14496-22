@@ -64,7 +64,7 @@ extension ISO_14496_22.FontFile {
         self.gpos = Self.table("GPOS", data: data, tableOffsets: tableOffsets).map(ISO_14496_22.GPOS.init(data:))
     }
 
-    public enum ParsingError: Swift::Error, Sendable {
+    public enum ParsingError: Swift::Error, Sendable, Hashable {
         case invalidData(String)
         case missingTable(String)
         case unsupportedFormat(String)

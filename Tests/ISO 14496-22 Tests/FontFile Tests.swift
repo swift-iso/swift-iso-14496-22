@@ -14,6 +14,15 @@ struct `Parsing Tests` {
     }
 
     @Test
+    func `Parsing errors are equal when case and message are`() {
+        typealias Failure = ISO_14496_22.FontFile.ParsingError
+        #expect(Failure.missingTable("head") == .missingTable("head"))
+        #expect(Failure.missingTable("head") != .missingTable("hhea"))
+        #expect(Failure.missingTable("head") != .invalidData("head"))
+        #expect(Set([Failure.invalidData("a"), .invalidData("a"), .unsupportedFormat("a")]).count == 2)
+    }
+
+    @Test
     func `Rejects data too small for header`() {
         let smallData = [0, 1, 0, 0].map(Byte.init(bitPattern:))
         #expect(throws: ISO_14496_22.FontFile.ParsingError.self) {
