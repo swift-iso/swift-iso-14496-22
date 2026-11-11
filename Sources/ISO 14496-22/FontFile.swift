@@ -24,6 +24,12 @@ extension ISO_14496_22 {
 
         public let glyf: GlyfTable?
 
+        public let cff: CFF?
+
+        public let kern: Kern?
+
+        public let gpos: GPOS?
+
         public init(
             data: [Byte],
             head: HeadTable,
@@ -34,7 +40,10 @@ extension ISO_14496_22 {
             name: NameTable,
             post: PostTable,
             loca: LocaTable? = nil,
-            glyf: GlyfTable? = nil
+            glyf: GlyfTable? = nil,
+            cff: CFF? = nil,
+            kern: Kern? = nil,
+            gpos: GPOS? = nil
         ) {
             self.data = data
             self.head = head
@@ -46,6 +55,9 @@ extension ISO_14496_22 {
             self.post = post
             self.loca = loca
             self.glyf = glyf
+            self.cff = cff
+            self.kern = kern
+            self.gpos = gpos
         }
     }
 }

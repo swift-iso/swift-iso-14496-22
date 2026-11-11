@@ -58,6 +58,10 @@ extension ISO_14496_22.FontFile {
             numGlyphs: maxp.numGlyphs
         )
         self.glyf = Self.parseGlyf(data: data, tableOffsets: tableOffsets)
+        self.cff = (Self.table("CFF ", data: data, tableOffsets: tableOffsets) ?? Self.table("CFF2", data: data, tableOffsets: tableOffsets))
+            .map(ISO_14496_22.CFF.init(data:))
+        self.kern = Self.table("kern", data: data, tableOffsets: tableOffsets).map(ISO_14496_22.Kern.init(data:))
+        self.gpos = Self.table("GPOS", data: data, tableOffsets: tableOffsets).map(ISO_14496_22.GPOS.init(data:))
     }
 
     public enum ParsingError: Swift::Error, Sendable {
@@ -602,6 +606,18 @@ extension ISO_14496_22.FontFile {
         }
 
         return ISO_14496_22.LocaTable(offsets: offsets)
+    }
+
+    static func table(
+        _ tag: String,
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) -> [Byte]? {
+        guard let table = tableOffsets[tag] else { return nil }
+        let start = Int(table.offset)
+        let length = Int(table.length)
+        guard start <= data.count, length <= data.count - start else { return nil }
+        return Array(data[start..<(start + length)])
     }
 
     static func parseGlyf(

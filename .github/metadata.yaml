@@ -1,6 +1,6 @@
 # .github/metadata.yaml
 # Triaged by AI-assisted bulk pass (2026-04-29).
-description: "Swift implementation of ISO/IEC 14496-22: Open Font Format."
+description: "Swift implementation of ISO/IEC 14496-22 (Open Font Format): metrics, character map, glyph outlines, kerning and TrueType subsetting."
 topics:
   - standards
   - iso
