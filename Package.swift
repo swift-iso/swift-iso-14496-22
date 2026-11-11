@@ -27,6 +27,11 @@ let package = Package(
             url: "https://github.com/swift-atoms/swift-byte.git",
             branch: "main"
         ),
+        .package(
+            url: "https://github.com/swift-atoms/swift-geometry.git",
+            branch: "main",
+            traits: ["Affine"]
+        ),
     ],
     targets: [
         .target(
@@ -38,6 +43,7 @@ let package = Package(
                 ),
                 .product(name: "Binary", package: "swift-binary"),
                 .product(name: "Byte", package: "swift-byte"),
+                .product(name: "Geometry", package: "swift-geometry"),
             ]
         ),
         .testTarget(
@@ -45,6 +51,7 @@ let package = Package(
             dependencies: [
                 .target(name: "ISO 14496-22"),
                 .product(name: "Byte", package: "swift-byte"),
+                .product(name: "Geometry", package: "swift-geometry"),
             ]
         ),
     ],
