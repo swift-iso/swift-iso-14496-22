@@ -522,8 +522,8 @@ extension ISO_14496_22.FontFile {
                     if isUnicode {
 
                         var chars: [UInt16] = []
-                        for j in stride(from: 0, to: stringBytes.count - 1, by: 2) {
-                            guard let unit = UInt16(bytes: stringBytes[j..<j + 2], endianness: .big) else {
+                        for pair in 0..<(stringBytes.count / 2) {
+                            guard let unit = UInt16(bytes: stringBytes[(pair * 2)..<(pair * 2 + 2)], endianness: .big) else {
                                 preconditionFailure("A 2-byte slice always decodes")
                             }
                             chars.append(unit)
