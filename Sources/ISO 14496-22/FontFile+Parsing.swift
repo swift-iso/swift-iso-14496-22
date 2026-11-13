@@ -250,9 +250,9 @@ extension ISO_14496_22.FontFile {
         var bestSubtableOffset: UInt32?
         var bestPriority = -1
 
-        for i in 0..<Int(numTables) {
-            let recordOffset = o + 4 + i * 8
-            guard recordOffset + 8 <= data.count else { break }
+        let recordOffsets = (0..<Int(numTables)).lazy.map { o + 4 + $0 * 8 }.prefix { $0 + 8 <= data.count }
+
+        recordOffsets.forEach { recordOffset in
 
             let platformID = readUInt16(data, at: recordOffset)
             let encodingID = readUInt16(data, at: recordOffset + 2)
