@@ -50,6 +50,7 @@ extension ISO_14496_22.FontFile {
         self.cmap = try Self.parseCmap(data: data, tableOffsets: tableOffsets)
         self.name = try Self.parseName(data: data, tableOffsets: tableOffsets)
         self.post = try Self.parsePost(data: data, tableOffsets: tableOffsets)
+        self.os2 = try Self.parseOS2(data: data, tableOffsets: tableOffsets)
 
         self.loca = Self.parseLoca(
             data: data,
@@ -569,6 +570,19 @@ extension ISO_14496_22.FontFile {
             maxMemType1: readUInt32(data, at: o + 28),
             glyphNames: nil
         )
+    }
+
+    static func parseOS2(
+        data: [Byte],
+        tableOffsets: [String: (offset: UInt32, length: UInt32)]
+    ) throws(ParsingError) -> ISO_14496_22.OS2? {
+        guard tableOffsets["OS/2"] != nil else {
+            return nil
+        }
+        guard let table = table("OS/2", data: data, tableOffsets: tableOffsets) else {
+            throw ParsingError.invalidData("OS/2 table extends beyond file")
+        }
+        return try ISO_14496_22.OS2(data: table)
     }
 
     static func parseLoca(

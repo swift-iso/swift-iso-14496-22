@@ -20,6 +20,9 @@ extension ISO_14496_22 {
 
         public let post: PostTable
 
+        /// The `OS/2` table, when the font has one.
+        public let os2: OS2?
+
         public let loca: LocaTable?
 
         public let glyf: GlyfTable?
@@ -39,6 +42,7 @@ extension ISO_14496_22 {
             cmap: CmapTable,
             name: NameTable,
             post: PostTable,
+            os2: OS2? = nil,
             loca: LocaTable? = nil,
             glyf: GlyfTable? = nil,
             cff: CFF? = nil,
@@ -53,6 +57,7 @@ extension ISO_14496_22 {
             self.cmap = cmap
             self.name = name
             self.post = post
+            self.os2 = os2
             self.loca = loca
             self.glyf = glyf
             self.cff = cff
