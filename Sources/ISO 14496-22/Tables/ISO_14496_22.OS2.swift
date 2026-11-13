@@ -241,10 +241,7 @@ extension ISO_14496_22.OS2 {
         func u32(_ offset: Int) throws(ISO_14496_22.FontFile.ParsingError) -> UInt32 {
             UInt32(truncatingIfNeeded: try bytes.u32(offset, or: truncated))
         }
-        var panose: [UInt8] = []
-        for index in 0..<10 {
-            panose.append(UInt8(truncatingIfNeeded: try bytes.u8(32 + index, or: truncated)))
-        }
+        let panose = data[32..<42].map(\.underlying)
         try self.init(
             version: version,
             xAvgCharWidth: i16(2),

@@ -521,12 +521,11 @@ extension ISO_14496_22.FontFile {
                 if isEnglish && strings[nameID] == nil {
                     if isUnicode {
 
-                        var chars: [UInt16] = []
-                        for pair in 0..<(stringBytes.count / 2) {
+                        let chars = (0..<(stringBytes.count / 2)).map { pair in
                             guard let unit = UInt16(bytes: stringBytes[(pair * 2)..<(pair * 2 + 2)], endianness: .big) else {
                                 preconditionFailure("A 2-byte slice always decodes")
                             }
-                            chars.append(unit)
+                            return unit
                         }
                         strings[nameID] = String(decoding: chars, as: UTF16.self)
                     } else if platformID == 1 && encodingID == 0 {
