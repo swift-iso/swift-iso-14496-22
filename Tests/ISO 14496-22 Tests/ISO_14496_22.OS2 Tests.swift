@@ -48,7 +48,7 @@ extension `ISO_14496_22.OS2 Tests` {
         return Build.bytes(header + entries + entry + padded + table)
     }
 
-    static func serialized() throws -> [Byte] {
+    static func serialized() throws(ISO_14496_22.FontSubsetter.SubsetError) -> [Byte] {
         let glyph: [UInt8] = Build.be16(1) + Build.be16(0) + Build.be16(0) + Build.be16(100) + Build.be16(100) + Build.be16(0)
         return try ISO_14496_22.FontSubsetter(fontFile: Build.font(glyphs: [glyph])).subset(characters: [])
     }

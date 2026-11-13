@@ -213,7 +213,7 @@ extension ISO_14496_22 {
 extension ISO_14496_22.OS2 {
 
     /// The number of bytes a table of the given version holds: 78, 86, 96 for versions 2 to 4, and 100 from version 5.
-    public static func size(version: UInt16) -> Int {
+    static func size(version: UInt16) -> Int {
         switch version {
         case 0: 78
         case 1: 86
