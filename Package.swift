@@ -12,7 +12,8 @@ let package = Package(
         .visionOS(.v27),
     ],
     products: [
-        .library(name: "ISO 14496-22", targets: ["ISO 14496-22"])
+        .library(name: "ISO 14496-22", targets: ["ISO 14496-22"]),
+        .library(name: "ISO 14496-22 Test Support", targets: ["ISO 14496-22 Test Support"]),
     ],
     dependencies: [
         .package(
@@ -46,10 +47,19 @@ let package = Package(
                 .product(name: "Geometry", package: "swift-geometry"),
             ]
         ),
+        .target(
+            name: "ISO 14496-22 Test Support",
+            dependencies: [
+                .target(name: "ISO 14496-22"),
+                .product(name: "Byte", package: "swift-byte"),
+            ],
+            path: "Tests/Support"
+        ),
         .testTarget(
             name: "ISO 14496-22 Tests",
             dependencies: [
                 .target(name: "ISO 14496-22"),
+                .target(name: "ISO 14496-22 Test Support"),
                 .product(name: "Byte", package: "swift-byte"),
                 .product(name: "Geometry", package: "swift-geometry"),
             ]
